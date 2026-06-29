@@ -22,10 +22,11 @@ RUN npm run build
 # ── Stage 2: runtime ────────────────────────────────────────
 FROM node:22-slim
 
-# Hugging Face Spaces run the container as a non-root user (uid 1000).
-# Create a matching user so file permissions line up.
-RUN useradd -m -u 1000 user
-WORKDIR /home/user/app
+# The node:* images already ship a non-root "node" user at UID 1000 — which is
+# exactly the UID Hugging Face Spaces expect the app to run as. Reuse it rather
+# than creating another (creating a second UID-1000 user fails with
+# "UID 1000 is not unique").
+WORKDIR /home/node/app
 
 # Install server production dependencies only.
 COPY server/package.json server/package-lock.json ./server/
@@ -36,9 +37,9 @@ RUN npm --prefix server ci --omit=dev
 COPY server/ ./server/
 COPY --from=client-build /build/client/dist ./client/dist
 
-# Hand ownership to the non-root user.
-RUN chown -R user:user /home/user/app
-USER user
+# Hand ownership to the built-in non-root "node" user (UID 1000).
+RUN chown -R node:node /home/node/app
+USER node
 
 ENV NODE_ENV=production
 # Hugging Face expects the app on the port declared as app_port in README.md.
