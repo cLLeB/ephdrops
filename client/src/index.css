@@ -1,0 +1,917 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap&font-display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .font-forensic {
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: slashed-zero;
+  }
+}
+
+@layer base {
+
+  /* CSS Custom Properties for dynamic viewport height */
+  :root {
+    --vh: 1vh;
+    --keyboard-height: 0px;
+    --chat-height: 100vh;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Android Emoji", sans-serif;
+    /* font-variant-emoji: emoji; -- Removed as it causes digit separation on some mobile devices */
+    letter-spacing: normal;
+    /* Light mode: cool blue-gray base — noticeably off-white for contrast */
+    background-color: #e8edf2;
+    @apply dark:bg-black text-gray-900 dark:text-gray-100;
+    /* Smooth out any background-color changes (e.g. keyboard dismiss resize flash) */
+    transition: background-color 0.25s ease, color 0.2s ease;
+  }
+
+  /* Ensure height chain: html → body → #root → .chat-container */
+  #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Mobile viewport fix */
+  .chat-container {
+    /*
+     * On Capacitor Android with Keyboard.resize:"body" + adjustResize,
+     * the WebView <body> itself shrinks when the keyboard opens.
+     * Using height:100% lets the container follow that body resize.
+     * position:fixed is relative to the viewport (ignores body resize)
+     * so we use position:absolute instead.
+     * On web browsers, 100dvh via fallback handles the dynamic viewport.
+     */
+    height: 100%;
+    max-height: 100dvh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Safe area for iPhone notch/home indicator */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  /* Ensure the input area never gets hidden */
+  .chat-input-area {
+    flex-shrink: 0;
+    position: relative;
+    background: inherit;
+    z-index: 50;
+    /* Android-specific: ensure input stays above keyboard */
+    min-height: 60px;
+  }
+
+  /* Message area should scroll */
+  .chat-messages-area {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Android fix: prevent overscroll bounce that can hide input */
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Global scrollbar hiding — keep all pages scrollable without a visible scrollbar */
+*::-webkit-scrollbar {
+  display: none !important;
+}
+
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Status animations */
+@keyframes bounce-subtle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 1.5s ease-in-out infinite;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-blue-400 bg-blue-50 text-gray-900 placeholder-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400;
+  }
+
+  /* Hide browser search/reveal icons for passwords */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
+  input::-webkit-contacts-auto-fill-button,
+  input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-black/10 dark:border-gray-700;
+  }
+
+  .no-copy {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+  }
+
+
+
+  /* Hide password echo (no dots) while keeping placeholder visible */
+  .input-no-echo {
+    color: transparent;
+    text-shadow: 0 0 0 transparent;
+    caret-color: transparent;
+    -webkit-text-fill-color: transparent !important;
+    /* Chromium/Edge */
+    /* Prevent reveal on selection (light or dark themes) */
+    user-select: text;
+  }
+
+  .input-no-echo::selection {
+    color: transparent;
+    background: transparent;
+  }
+
+  .input-no-echo::-moz-selection {
+    color: transparent;
+    background: transparent;
+  }
+
+  /* Guard against autofill or forced colors in Chromium/Edge */
+  .input-no-echo:-webkit-autofill,
+  .input-no-echo:-webkit-autofill:hover,
+  .input-no-echo:-webkit-autofill:focus,
+  .input-no-echo:-webkit-autofill:active {
+    -webkit-text-fill-color: transparent !important;
+    caret-color: transparent;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  .input-no-echo::placeholder {
+    /* Match default placeholder colors */
+    @apply text-gray-400 dark:text-gray-500;
+  }
+}
+
+/* Custom scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: #4b5563 transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.sensitive-container {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* This class makes content impossible to read instantly when focus is lost */
+.protected-mode {
+  filter: blur(30px) grayscale(100%) !important;
+  transition: none !important;
+  /* Instant blur for snapshots */
+  user-select: none;
+  /* Prevents highlighting text */
+  pointer-events: none;
+  /* Prevents interaction while blurred */
+}
+
+/* Instant black screen for iOS snapshots - faster than React render */
+.protected-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 999998;
+  display: block;
+}
+
+/* Message Micro-interactions */
+@keyframes message-vanish {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(12px);
+  }
+}
+
+@keyframes message-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.3);
+    transform: scale(1.02);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    transform: scale(1);
+  }
+}
+
+@keyframes message-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-vanishing {
+  animation: message-vanish 0.6s forwards cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.message-new {
+  animation: message-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.message-delivered-glow {
+  animation: message-glow 1.2s ease-out;
+}
+
+/* Ghost Watermark System */
+.watermark-layer {
+  position: fixed;
+  top: -50%;
+  /* Oversized to prevent gaps during rotation/scrolling */
+  left: -50%;
+  width: 200%;
+  height: 200%;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 80px;
+
+  transform: rotate(-25deg);
+  pointer-events: none;
+  /* Essential: allows clicking chat buttons underneath */
+  user-select: none;
+  /* Prevents selecting the watermark text */
+  z-index: 9998;
+
+  /* THEME AGNOSTIC: Automatically inverts based on background color */
+  mix-blend-mode: difference;
+  color: rgba(255, 255, 255, 0.25);
+  /* Increased opacity from 0.22 */
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  /* Reduced from 1.5px to fix separation */
+  font-weight: 600;
+
+  /* THE DRIFT: Slow, constant movement to deter AI removal */
+  animation: watermark-drift 120s linear infinite;
+}
+
+@keyframes watermark-drift {
+  from {
+    transform: rotate(-25deg) translate(0, 0);
+  }
+
+  to {
+    transform: rotate(-25deg) translate(-200px, 200px);
+  }
+}
+
+.watermark-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  opacity: 1;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-10px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+/* Zoom-style Floating Reactions */
+#reaction-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translate(var(--x), 0) rotate(var(--r)) scale(0.9);
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(var(--x), -70vh) rotate(var(--r)) scale(1.4);
+    opacity: 0;
+  }
+}
+
+.floating-reaction {
+  position: absolute;
+  bottom: env(safe-area-inset-bottom, 16px);
+  left: 50%;
+  /* Center start point, logic will adjust via --x */
+  font-size: 28px;
+  animation: floatUp 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+  pointer-events: none;
+  user-select: none;
+  z-index: 9999;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+@media (min-width: 640px) {
+  .floating-reaction {
+    font-size: 38px;
+  }
+}
+
+
+/* Confetti Bomb burst animation */
+@keyframes confettiBurst {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--ex), var(--ey)) rotate(var(--spin)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  user-select: none;
+  z-index: 9998;
+  animation: confettiBurst var(--dur) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: transform, opacity;
+}
+
+.message-reaction-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+@keyframes messageReactionFly {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(0.95);
+    opacity: 1;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.55), var(--upY)) rotate(calc(var(--spin) * 0.55)) scale(1.2);
+    opacity: 1;
+  }
+  82% {
+    transform: translate(calc(var(--dx) * 0.92), var(--downY)) rotate(calc(var(--spin) * 0.92)) scale(0.98);
+    opacity: 1;
+  }
+  92% {
+    transform: translate(calc(var(--dx) * 0.98), calc(var(--downY) - 14px)) rotate(calc(var(--spin) * 0.98)) scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--dx), calc(var(--downY) + 10px)) rotate(var(--spin)) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.message-reaction-sprite {
+  position: absolute;
+  transform: translate(0, 0);
+  font-size: 28px;
+  transform-origin: center;
+  animation: messageReactionFly var(--dur) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 8px 14px var(--shadow));
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .message-reaction-sprite {
+    font-size: 36px;
+  }
+}
+
+/* Cap.js widget dark mode styling */
+.dark cap-widget,
+.dark cap-widget * {
+  background-color: #374151 !important;
+  /* gray-700 */
+  color: #f3f4f6 !important;
+  /* gray-100 */
+  border-color: #4b5563 !important;
+  /* gray-600 */
+}
+
+.dark cap-widget input,
+.dark cap-widget button {
+  background-color: #4b5563 !important;
+  /* gray-600 */
+  color: #f3f4f6 !important;
+}
+
+.dark cap-widget label,
+.dark cap-widget span,
+.dark cap-widget p {
+  color: #e5e7eb !important;
+  /* gray-200 */
+}
+
+cap-widget {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Android App Banner Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(-40%) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ============================================
+   iOS Safari/PWA Keyboard Fix
+   
+   On Capacitor native, the WebView body resizes
+   natively (Keyboard.resize:"body" + adjustResize).
+   On iOS Safari web, visualViewport JS sets --chat-height.
+   ============================================ */
+
+/* iOS-specific styles (Safari only) */
+@supports (-webkit-touch-callout: none) {
+
+  /* Ensure proper safe area padding */
+  .chat-input-area {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* When keyboard is open, ensure no body scroll */
+  body.ios-keyboard-open {
+    overflow: hidden !important;
+    /* Prevent momentum scrolling issues */
+    -webkit-overflow-scrolling: auto !important;
+  }
+
+  /* Container should shrink based on --chat-height (iOS Safari web only) */
+  body.ios-keyboard-open .chat-container {
+    height: var(--chat-height, 100%) !important;
+  }
+}
+
+/* iOS STANDALONE (PWA) specific fixes */
+@media all and (display-mode: standalone) {
+
+  /* Adjust for status bar in standalone mode */
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .chat-container {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific using feature detection */
+
+  .chat-input-area {
+    /* Stick to bottom of visual viewport */
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+
+    /* Ensure background covers any gap */
+    background: inherit;
+
+    /* Prevent gap by ensuring full width */
+    width: 100%;
+    margin: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Make sure messages area accounts for sticky input */
+  .chat-messages-area {
+    /* Reduce height to account for sticky input */
+    padding-bottom: 80px;
+    /* Approximate input height */
+  }
+}
+
+/* Utility to hide scrollbars but keep functionality - High Priority */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* ── Emoji Picker transparent glassmorphic overrides ── */
+.themed-emoji-picker .EmojiPickerReact {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.themed-emoji-picker .EmojiPickerReact .epr-header,
+.themed-emoji-picker .EmojiPickerReact .epr-body,
+.themed-emoji-picker .EmojiPickerReact .epr-search-container,
+.themed-emoji-picker .EmojiPickerReact .epr-category-nav {
+  background: transparent !important;
+}
+
+.themed-emoji-picker .EmojiPickerReact .epr-emoji-category-label {
+  background: transparent !important;
+}
+
+.themed-emoji-picker .EmojiPickerReact .epr-search-container input {
+  background: rgba(128, 128, 128, 0.15) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── WhatsApp-Style Mobile Emoji Drawer Reordering ── */
+.mobile-emoji-drawer .EmojiPickerReact {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Use display: contents to break the search and nav out of the header flexbox so they can be reordered relative to the body */
+.mobile-emoji-drawer .EmojiPickerReact .epr-header {
+  display: contents !important; 
+}
+
+/* 1. Search Bar at the very top */
+.mobile-emoji-drawer .EmojiPickerReact .epr-search-container {
+  order: 1 !important;
+  padding: 4px 12px 2px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* 2. Emoji Scroll Area in the middle */
+.mobile-emoji-drawer .EmojiPickerReact .epr-body {
+  order: 2 !important;
+  flex: 1 1 auto !important;
+}
+
+/* 3. Category Nav at the very bottom */
+.mobile-emoji-drawer .EmojiPickerReact,
+.mobile-emoji-drawer .EmojiPickerReact * {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.mobile-emoji-drawer .EmojiPickerReact .epr-category-nav {
+  order: 3 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+/* ── Light Mode Range Input Slider Visibility ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  /* width: 100%; -- Removed to allow custom widths via Tailwind classes */
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: #94a3b8;
+  /* Darker slate-400 for better light-mode visibility */
+}
+
+.dark input[type="range"]::-webkit-slider-runnable-track {
+  background: #374151;
+  /* gray-700 for dark mode */
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  /* Darker white (slate-200) for better visibility */
+  border: 1.5px solid #64748b;
+  /* Sharper slate-500 border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin-top: -3px;
+  /* Centering for 4px track/10px thumb: (4-10)/2 = -3 */
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #4b5563;
+  border: 1.5px solid #9ca3af;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background: #fff;
+  border-color: #3b82f6;
+  /* Subtle blue hint on hover only */
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: #94a3b8;
+}
+
+.dark input[type="range"]::-moz-range-track {
+  background: #374151;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 1.5px solid #64748b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: #4b5563;
+  border: 1.5px solid #9ca3af;
+}
+
+/* ─── Global Light Theme Accessibility Fixes ─── */
+/* Adds subtle borders to standard cards and menus in light mode
+   to prevent them blending into pure white backgrounds.
+   (Exempts glassmorphic panels like Feature Menu/Emoji Picker) */
+
+/* Specific fix for grey borders that are too light in light mode */
+:root:not(.dark) .border-gray-100,
+:root:not(.dark) .border-gray-200 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Ensure message cards (Polls, Previews) have a visible perimeter */
+:root:not(.dark) .rounded-xl.shadow-sm:not(.backdrop-blur-xl),
+:root:not(.dark) .rounded-2xl.shadow-lg:not(.backdrop-blur-xl),
+:root:not(.dark) .rounded-3xl.shadow-2xl:not(.backdrop-blur-xl) {
+  border-left-color: rgba(0, 0, 0, 0.08) !important;
+  border-right-color: rgba(0, 0, 0, 0.08) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ─── Light Mode: Soften All Pure-White Surfaces ─── */
+/* Replaces #ffffff with a soft cool-white so cards/panels/menus
+   contrast visibly against the #e8edf2 page base. */
+:root:not(.dark) .bg-white {
+  background-color: #f2f6fb !important;
+}
+
+/* Slightly deepen bg-slate-50 / bg-gray-50 surfaces in light mode
+   so they sit between the page base and elevated cards. */
+:root:not(.dark) .bg-slate-50,
+:root:not(.dark) .bg-gray-50 {
+  background-color: #eaf0f6 !important;
+}
+
+/* ─── Light Mode: Darken Muted / Secondary Text ─── */
+/* Default gray-400/500 are near-invisible against the softer backgrounds.
+   Shift them two stops darker so all text reads clearly in light theme. */
+:root:not(.dark) .text-gray-400 {
+  color: #4b5563 !important; /* gray-600 */
+}
+:root:not(.dark) .text-gray-500 {
+  color: #374151 !important; /* gray-700 */
+}
+:root:not(.dark) .text-slate-400 {
+  color: #4b5563 !important;
+}
+:root:not(.dark) .text-slate-500 {
+  color: #374151 !important;
+}
+
+/* Hide emoji category names/headings in the picker without breaking virtualization */
+.EmojiPickerReact .epr-emoji-category-label {
+  height: 1px !important;
+  min-height: 1px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  font-size: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── RTL / language support ────────────────────────────────────────────────── */
+html[lang="ar"] {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', system-ui, sans-serif;
+}
+
+html[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', 'Segoe UI', system-ui, sans-serif;
+}
+
+html[lang="ja"] {
+  font-family: 'Noto Sans JP', 'Segoe UI', system-ui, sans-serif;
+}
+
+html[lang="zh"] {
+  font-family: 'Noto Sans SC', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* RTL layout flips */
+html[dir="rtl"] .flex { flex-direction: row-reverse; }
+html[dir="rtl"] .flex-col { flex-direction: column; }
+html[dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+html[dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+html[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+html[dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
+html[dir="rtl"] .pl-10 { padding-left: 0; padding-right: 2.5rem; }
+html[dir="rtl"] .pr-3 { padding-right: 0; padding-left: 0.75rem; }
+html[dir="rtl"] .left-3 { left: auto; right: 0.75rem; }
+html[dir="rtl"] .rounded-l-full { border-radius: 0 9999px 9999px 0; }
+html[dir="rtl"] .rounded-r-full { border-radius: 9999px 0 0 9999px; }
+html[dir="rtl"] .text-left { text-align: right; }
+

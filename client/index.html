@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="EphDrops" />
+  <meta name="description"
+    content="Create encrypted, self-destructing drops. The server never sees your content." />
+
+  <!-- App Icons -->
+  <link rel="apple-touch-icon" href="/icons/app-192.png" />
+
+  <style>
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out, visibility 0.5s;
+    }
+
+    .dark #splash-screen {
+      background: #030712;
+    }
+
+    .splash-logo-img {
+      width: clamp(80px, 20vmin, 160px);
+      height: clamp(80px, 20vmin, 160px);
+      animation: splashFadeIn 0.6s ease-out;
+    }
+
+    @keyframes splashFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    body.app-loaded #splash-screen {
+      opacity: 0;
+      visibility: hidden;
+    }
+  </style>
+  <script>
+    // Theme detection for splash screen
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <title>Ephemeral Drops - Encrypted, Self-Destructing Drops</title>
+</head>
+
+<body>
+  <div id="splash-screen">
+    <img class="splash-logo-img" src="/logo.svg" alt="" />
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    // Signal app is ready (called from main.jsx)
+    window.addEventListener('app-ready', () => {
+      document.body.classList.add('app-loaded');
+    });
+  </script>
+</body>
+
+</html>

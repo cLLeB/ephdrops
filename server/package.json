@@ -1,0 +1,17 @@
+{
+  "name": "ephemeral-drops-server",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "sanitize-html": "^2.17.0"
+  }
+}

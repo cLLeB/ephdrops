@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
+  <title>Offline – Ephemeral Chat</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #e8edf2;
+      --surface:      #ffffff;
+      --surface-2:    #f1f5f9;
+      --text:         #0f172a;
+      --subtext:      #64748b;
+      --muted:        #94a3b8;
+      --accent:       #4f46e5;
+      --accent-light: #6366f1;
+      --accent-dim:   rgba(79,70,229,0.12);
+      --accent-glow:  rgba(79,70,229,0.25);
+      --danger:       #ef4444;
+      --border:       rgba(15,23,42,0.08);
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-lg:    0 20px 60px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.05);
+    }
+
+    html.dark {
+      --bg:           #030712;
+      --surface:      #0f172a;
+      --surface-2:    #1e293b;
+      --text:         #f8fafc;
+      --subtext:      #94a3b8;
+      --muted:        #64748b;
+      --accent:       #6366f1;
+      --accent-light: #818cf8;
+      --accent-dim:   rgba(99,102,241,0.15);
+      --accent-glow:  rgba(99,102,241,0.30);
+      --border:       rgba(248,250,252,0.07);
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-lg:    0 20px 60px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── Layout ── */
+    .page {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      position: relative;
+      overflow: hidden;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    /* ── Background blobs ── */
+    .blobs {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+    }
+    .blob-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle at 40% 40%, var(--accent-dim), transparent 70%);
+      top: -150px; right: -150px;
+      animation: blobDrift 12s ease-in-out infinite alternate;
+    }
+    .blob-2 {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle at 60% 60%, rgba(139,92,246,0.12), transparent 70%);
+      bottom: -80px; left: -80px;
+      animation: blobDrift 10s ease-in-out infinite alternate-reverse;
+      animation-delay: 2s;
+    }
+    .blob-3 {
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(236,72,153,0.08), transparent 70%);
+      top: 40%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: blobPulse 6s ease-in-out infinite;
+    }
+    @keyframes blobDrift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(30px, 40px) scale(1.15); }
+    }
+    @keyframes blobPulse {
+      0%, 100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+      50%       { opacity: 1;   transform: translate(-50%,-50%) scale(1.2); }
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 44px 40px 40px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    @media (max-width: 480px) {
+      .card { padding: 36px 24px 32px; border-radius: 20px; }
+    }
+
+    /* ── Logo bar ── */
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .brand-icon {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--subtext);
+      letter-spacing: -0.01em;
+    }
+
+    /* ── WiFi signal animation ── */
+    .signal-wrap {
+      position: relative;
+      width: 120px;
+      height: 96px;
+      margin: 0 auto 28px;
+    }
+    .signal-svg { width: 100%; height: 100%; overflow: visible; }
+
+    .arc {
+      fill: none;
+      stroke-linecap: round;
+      stroke: var(--accent);
+      transition: opacity 0.3s;
+    }
+    .arc-outer { stroke-width: 7; animation: arcFade 2.4s ease-in-out infinite; animation-delay: 0.0s; }
+    .arc-mid   { stroke-width: 7; animation: arcFade 2.4s ease-in-out infinite; animation-delay: 0.3s; }
+    .arc-inner { stroke-width: 7; animation: arcFade 2.4s ease-in-out infinite; animation-delay: 0.6s; }
+    .dot       { fill: var(--accent); animation: arcFade 2.4s ease-in-out infinite; animation-delay: 0.9s; }
+
+    @keyframes arcFade {
+      0%, 25%  { opacity: 1; }
+      60%, 85% { opacity: 0.12; }
+      100%     { opacity: 1; }
+    }
+
+    /* X badge */
+    .x-badge {
+      position: absolute;
+      top: -6px; right: -4px;
+      animation: badgePop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes badgePop {
+      from { transform: scale(0) rotate(-30deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* ── Status badge ── */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-light);
+      margin-bottom: 20px;
+      letter-spacing: 0.01em;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      animation: dotPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.35; transform: scale(0.65); }
+    }
+
+    /* ── Text ── */
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.15;
+    }
+    .desc {
+      font-size: 0.9375rem;
+      color: var(--subtext);
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    /* ── Retry button ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 13px 28px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 18px var(--accent-glow);
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover  { background: #4338ca; transform: translateY(-1px); box-shadow: 0 8px 28px var(--accent-glow); }
+    .btn:active { transform: translateY(0); }
+    .btn-icon   { flex-shrink: 0; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .btn:hover .btn-icon { transform: rotate(190deg); }
+
+    /* ── Tips ── */
+    .tips {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: left;
+    }
+    .tips-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 0.8125rem;
+      color: var(--subtext);
+      line-height: 1.55;
+    }
+    .tip-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+      width: 16px; height: 16px;
+    }
+    .tip-ok .tip-icon  { color: var(--accent-light); }
+    .tip-no .tip-icon  { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Background blobs -->
+    <div class="blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="card" role="main">
+      <!-- Brand -->
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="512" height="512" rx="100" fill="#4F46E5"/>
+          <path d="M128 102 L384 102 C394 102 402 110 402 120 L402 310 C402 320 394 328 384 328 L280 328 L230 400 L200 328 L128 328 C118 328 110 320 110 310 L110 120 C110 110 118 102 128 102 Z" fill="white"/>
+        </svg>
+        <span class="brand-name">Ephemeral Chat</span>
+      </div>
+
+      <!-- Signal animation -->
+      <div class="signal-wrap" aria-hidden="true">
+        <svg class="signal-svg" viewBox="0 0 120 96">
+          <!-- Arcs drawn top-down: outer → mid → inner → dot -->
+          <path class="arc arc-outer" d="M8 52 Q30 10 60 10 Q90 10 112 52"/>
+          <path class="arc arc-mid"   d="M22 64 Q38 38 60 38 Q82 38 98 64"/>
+          <path class="arc arc-inner" d="M37 76 Q46 62 60 62 Q74 62 83 76"/>
+          <circle class="dot" cx="60" cy="88" r="6"/>
+        </svg>
+        <!-- Red X badge -->
+        <svg class="x-badge" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="No signal">
+          <circle cx="16" cy="16" r="14" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+          <path d="M11 11 L21 21 M21 11 L11 21" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- Status pill -->
+      <div class="status" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        Looking for connection…
+      </div>
+
+      <h1>You're Offline</h1>
+      <p class="desc">
+        Ephemeral Chat can't reach the server right now.<br>
+        Check your connection and try again.
+      </p>
+
+      <button class="btn" onclick="retry()" aria-label="Retry connecting">
+        <svg class="btn-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M14 2v4h-4" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 6 C13.2 3.7 11 2 8 2 4.7 2 2 4.7 2 8s2.7 6 6 6c2.6 0 4.9-1.7 5.7-4" stroke="white" stroke-width="1.75" stroke-linecap="round" fill="none"/>
+        </svg>
+        Try Again
+      </button>
+
+      <!-- Tips -->
+      <div class="tips" aria-label="What works offline">
+        <div class="tips-label">While offline</div>
+
+        <div class="tip tip-ok">
+          <svg class="tip-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M5 8.5 L7 10.5 L11 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Nearby (LAN) file transfers still work
+        </div>
+
+        <div class="tip tip-ok">
+          <svg class="tip-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M5 8.5 L7 10.5 L11 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Desktop app settings are saved locally
+        </div>
+
+        <div class="tip tip-no">
+          <svg class="tip-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 5V8.5M8 10.5V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Real-time messaging requires internet
+        </div>
+
+        <div class="tip tip-no">
+          <svg class="tip-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 5V8.5M8 10.5V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Creating or joining rooms requires a connection
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // Apply theme before paint
+      var stored = '';
+      try { stored = localStorage.getItem('theme') || ''; } catch (_) {}
+      var dark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+
+      // Auto-retry when connection restores
+      window.addEventListener('online', function () {
+        window.location.replace(window.location.origin + '/');
+      });
+
+      // Listen to OS dark-mode changes when no stored preference
+      if (!stored) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+          if (e.matches) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        });
+      }
+    }());
+
+    function retry() {
+      window.location.replace(window.location.origin + '/');
+    }
+  </script>
+</body>
+</html>
