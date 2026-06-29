@@ -4,7 +4,7 @@ import {
   X, Package, Clock, Eye, EyeOff, AlertTriangle,
   FileDown, Type, Image, Mic, FileUp, Shield, Loader2, Lock
 } from 'lucide-react';
-import { decryptDrop, decryptDropFromBytes, arrayBufferToText, arrayBufferToDataUrl, arrayBufferToObjectUrl } from '../utils/drops';
+import { decryptDrop, decryptDropFromBytes, arrayBufferToText, arrayBufferToDataUrl, arrayBufferToObjectUrl, hashUsername, completeDropAPI } from '../utils/drops';
 import { formatTimeRemaining } from '../utils/eph-file';
 import { downloadDataUrlOnDevice, downloadObjectUrlOnDevice } from '../utils/downloadHelper';
 import StegoModal from './StegoModal';
@@ -108,6 +108,16 @@ const DropViewer = ({ onClose, claimData }) => {
           const url = arrayBufferToObjectUrl(plainBuffer, mType);
           setObjectUrl(url);
           setDecryptedContent({ type: 'file', data: url, meta: contentMeta });
+        }
+
+        // The content is now safely downloaded and decrypted in the browser.
+        // For view-once drops, confirm receipt so the server destroys the
+        // source (and the R2 object) immediately instead of waiting for the TTL.
+        // Fire-and-forget — never block or fail the view on this.
+        if (viewOnce && username && salt) {
+          hashUsername(username, salt)
+            .then((usernameHash) => completeDropAPI(dropId, usernameHash))
+            .catch(() => { /* non-fatal: TTL still cleans up */ });
         }
       } catch (err) {
         if (!cancelled) {

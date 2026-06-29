@@ -382,6 +382,34 @@ function createDropRoutes(dropManager, options = {}) {
     }
   });
 
+  // ─── POST /api/drops/:dropId/complete — Confirm receipt ───
+  // The recipient's browser calls this once it has downloaded + decrypted the
+  // content. For R2 view-once drops it triggers immediate destruction of the
+  // bucket object (no waiting for the TTL).
+
+  router.post('/:dropId/complete', claimRateLimit, async (req, res) => {
+    try {
+      const { dropId } = req.params;
+      const { usernameHash } = req.body;
+
+      if (!dropId || typeof dropId !== 'string') {
+        return res.status(400).json({ error: 'Invalid drop ID' });
+      }
+      if (!usernameHash || !/^[a-f0-9]{64}$/.test(usernameHash)) {
+        return res.status(400).json({ error: 'Invalid username hash format' });
+      }
+
+      const result = dropManager.completeDrop(dropId, usernameHash);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      logger.error('Error completing drop:', error.message);
+      if (error.message.includes('denied') || error.message.includes('not authorized')) {
+        return res.status(403).json({ error: error.message });
+      }
+      res.status(500).json({ error: 'Failed to complete drop' });
+    }
+  });
+
   // ─── DELETE /api/drops/:dropId — Delete a drop ────────────
 
   router.delete('/:dropId', async (req, res) => {

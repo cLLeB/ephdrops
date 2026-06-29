@@ -568,6 +568,27 @@ export async function claimDropAPI(dropId, usernameHash) {
 }
 
 /**
+ * Confirm a drop has been received (downloaded + decrypted) by this recipient.
+ * For R2 view-once drops this triggers immediate destruction of the bucket
+ * object. Best-effort — failures are non-fatal (the TTL still cleans up).
+ *
+ * @param {string} dropId
+ * @param {string} usernameHash - SHA-256 hash of (username + salt)
+ * @returns {Promise<void>}
+ */
+export async function completeDropAPI(dropId, usernameHash) {
+  try {
+    await secureFetch(`${API_BASE}/api/drops/${dropId}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usernameHash }),
+    });
+  } catch {
+    // Non-fatal: the drop's TTL (and the R2 lifecycle rule) will still clean up.
+  }
+}
+
+/**
  * Resolve a verbal code to a drop
  * @param {string} verbalCode - 4-word verbal code
  * @returns {Promise<Object>} { dropId, drop }

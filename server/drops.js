@@ -304,6 +304,7 @@ class DropManager {
       viewOnce,
       maxViews: viewOnce ? 1 : -1,
       viewedBy: new Set(),
+      completedBy: new Set(),
       claimedCount: 0,
       verbalCode,
       fileName,
@@ -450,15 +451,25 @@ class DropManager {
       downloadUrl = presigned.downloadUrl;
     }
 
-    // Check if all recipients have viewed (for view-once), auto-delete.
-    // For R2 we delay the bucket object deletion past the presigned URL's
-    // lifetime so this just-issued download has time to complete before the
-    // object disappears. The metadata is removed immediately either way.
-    if (drop.viewOnce && drop.viewedBy.size >= drop.recipientHashes.length) {
+    // View-once cleanup.
+    //
+    // For in-memory drops the ciphertext is returned inline in this very
+    // response, so once all recipients have claimed we can delete immediately —
+    // there is no separate download to race.
+    //
+    // For R2 drops the browser still has to fetch the ciphertext from the bucket
+    // using the presigned URL above, AFTER this call returns. Deleting now would
+    // kill that download. So we do NOT delete here; instead the client calls
+    // completeDrop() once it has downloaded and decrypted, which removes the
+    // object immediately and safely. The TTL timer remains the fallback if the
+    // client never confirms.
+    if (
+      drop.storage !== 'r2' &&
+      drop.viewOnce &&
+      drop.viewedBy.size >= drop.recipientHashes.length
+    ) {
       logger.info(`📦 Drop ${dropId}: all recipients have viewed, auto-deleting`);
-      const graceMs =
-        drop.storage === 'r2' ? (r2.getDownloadExpirySeconds() + 30) * 1000 : 0;
-      this._deleteDrop(dropId, { objectGraceMs: graceMs });
+      this._deleteDrop(dropId);
     }
 
     return {
@@ -475,6 +486,42 @@ class DropManager {
       expiresAt: drop.expiresAt,
       viewOnce: drop.viewOnce,
     };
+  }
+
+  // ─── Confirm Download Complete (R2 view-once immediate destroy) ──
+
+  /**
+   * Called by the recipient's browser once it has finished downloading and
+   * decrypting an R2-backed drop. For view-once drops this lets the server
+   * delete the bucket object the instant the content is safely received,
+   * instead of waiting for the TTL. Safe to call more than once.
+   *
+   * @param {string} dropId
+   * @param {string} usernameHash - SHA-256 hash of the claiming username
+   * @returns {{ deleted: boolean }}
+   */
+  completeDrop(dropId, usernameHash) {
+    const drop = this.drops.get(dropId);
+    // Already gone (expired, or destroyed by a prior completion) — nothing to do.
+    if (!drop) return { deleted: true };
+
+    // Only an authorized recipient may signal completion / trigger destruction.
+    if (!drop.recipientHashes.includes(usernameHash)) {
+      throw new Error('Access denied. Your username is not authorized for this drop.');
+    }
+
+    drop.completedBy.add(usernameHash);
+
+    // Once every recipient has confirmed receipt of a view-once drop, destroy
+    // it immediately — the download(s) are provably finished, so there is no
+    // race with the presigned URL.
+    if (drop.viewOnce && drop.completedBy.size >= drop.recipientHashes.length) {
+      logger.info(`📦 Drop ${dropId}: all recipients confirmed receipt, destroying now`);
+      this._deleteDrop(dropId);
+      return { deleted: true };
+    }
+
+    return { deleted: false };
   }
 
   // ─── Lookup by Verbal Code ────────────────────────────────
