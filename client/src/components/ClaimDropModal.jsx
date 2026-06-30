@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { hapticSuccess, hapticError } from '../utils/platform';
+import MobileLargeDropNote from './MobileLargeDropNote';
 import {
   getDropInfoAPI, claimDropAPI, resolveVerbalCodeAPI, hashUsername,
   decryptHint, unwrapMasterKey, deriveWrappingKey,
@@ -266,6 +267,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
 
         {/* Body */}
         <div className="p-4 max-h-[65vh] overflow-y-auto no-scrollbar">
+          <MobileLargeDropNote />
           {/* ─── Step 1: Identify Drop ────────────── */}
           {step === 1 && (
             <div className="space-y-4">

@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      mobileLargeNote: "非常大的投递（数百 MB）可能因内存限制而无法在手机上打开。大文件请使用电脑。",
       uploading: "上传中… {{pct}}%",
       home: {
         title: "临时投递",

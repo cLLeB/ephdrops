@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      mobileLargeNote: "Sehr große Drops (hunderte MB) lassen sich auf dem Telefon wegen Speichergrenzen evtl. nicht öffnen. Nutze für große Dateien einen Computer.",
       uploading: "Hochladen… {{pct}}%",
       home: {
         title: "Ephemere Drops",

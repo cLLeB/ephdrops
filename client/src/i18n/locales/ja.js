@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      mobileLargeNote: "非常に大きなドロップ（数百MB）は、メモリの制限によりスマートフォンでは開けない場合があります。大きなファイルにはパソコンをご利用ください。",
       uploading: "アップロード中… {{pct}}%",
       home: {
         title: "一時的なドロップ",

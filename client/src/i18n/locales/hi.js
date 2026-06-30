@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      mobileLargeNote: "बहुत बड़े drops (सैकड़ों MB) मेमोरी सीमा के कारण फ़ोन पर नहीं खुल सकते। बड़ी फ़ाइलों के लिए कंप्यूटर का उपयोग करें।",
       uploading: "अपलोड हो रहा है… {{pct}}%",
       home: {
         title: "अस्थायी Drops",
