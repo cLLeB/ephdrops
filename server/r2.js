@@ -28,6 +28,10 @@ const {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { logger } = require('./utils');
@@ -152,6 +156,86 @@ async function deleteObject(objectKey) {
   }
 }
 
+// ─── Multipart upload (large files) ─────────────────────────
+// For payloads above the client's multipart threshold the browser uploads in
+// parts so the transfer is resumable, shows progress, and never holds the whole
+// body in a single request. The object that results is a normal R2 object, so
+// presignDownload works unchanged on claim.
+
+/**
+ * Begin a multipart upload. Returns the uploadId that ties the parts together.
+ * @param {string} objectKey
+ * @returns {Promise<{ uploadId: string }>}
+ */
+async function createMultipartUpload(objectKey) {
+  const out = await getClient().send(
+    new CreateMultipartUploadCommand({ Bucket: BUCKET, Key: objectKey })
+  );
+  return { uploadId: out.UploadId };
+}
+
+/**
+ * Presign a PUT URL for each requested part number.
+ * @param {string} objectKey
+ * @param {string} uploadId
+ * @param {number[]} partNumbers - 1-based part numbers
+ * @returns {Promise<Array<{ partNumber: number, url: string }>>}
+ */
+async function presignUploadParts(objectKey, uploadId, partNumbers) {
+  return Promise.all(
+    partNumbers.map(async (partNumber) => {
+      const command = new UploadPartCommand({
+        Bucket: BUCKET,
+        Key: objectKey,
+        UploadId: uploadId,
+        PartNumber: partNumber,
+      });
+      const url = await getSignedUrl(getClient(), command, { expiresIn: PUT_EXPIRY_SECONDS });
+      return { partNumber, url };
+    })
+  );
+}
+
+/**
+ * Finalize a multipart upload from the collected part ETags.
+ * @param {string} objectKey
+ * @param {string} uploadId
+ * @param {Array<{ partNumber: number, etag: string }>} parts
+ * @returns {Promise<void>}
+ */
+async function completeMultipartUpload(objectKey, uploadId, parts) {
+  const Parts = parts
+    .slice()
+    .sort((a, b) => a.partNumber - b.partNumber)
+    .map((p) => ({ ETag: p.etag, PartNumber: p.partNumber }));
+  await getClient().send(
+    new CompleteMultipartUploadCommand({
+      Bucket: BUCKET,
+      Key: objectKey,
+      UploadId: uploadId,
+      MultipartUpload: { Parts },
+    })
+  );
+}
+
+/**
+ * Abort an in-progress multipart upload so the parts don't linger (and incur
+ * storage). Never throws — abort is best-effort cleanup.
+ * @param {string} objectKey
+ * @param {string} uploadId
+ * @returns {Promise<void>}
+ */
+async function abortMultipartUpload(objectKey, uploadId) {
+  if (!R2_ENABLED) return;
+  try {
+    await getClient().send(
+      new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: objectKey, UploadId: uploadId })
+    );
+  } catch (error) {
+    logger.warn(`[r2] Failed to abort multipart ${objectKey}/${uploadId}: ${error.message}`);
+  }
+}
+
 module.exports = {
   isR2Enabled,
   getDownloadExpirySeconds,
@@ -159,4 +243,8 @@ module.exports = {
   presignUpload,
   presignDownload,
   deleteObject,
+  createMultipartUpload,
+  presignUploadParts,
+  completeMultipartUpload,
+  abortMultipartUpload,
 };

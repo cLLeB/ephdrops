@@ -364,6 +364,25 @@ class DropManager {
     };
   }
 
+  // ─── Multipart upload target resolution ──────────────────
+
+  /**
+   * Resolve the R2 object key for a multipart upload, verifying the caller is
+   * the drop's creator. Used by the multipart endpoints so a third party who
+   * happens to know a dropId cannot drive its upload.
+   * @param {string} dropId
+   * @param {string} creatorId
+   * @returns {string} objectKey
+   * @throws if the drop is missing, not R2-backed, or the creator mismatches
+   */
+  getUploadTarget(dropId, creatorId) {
+    const drop = this.drops.get(dropId);
+    if (!drop) throw new Error('Drop not found');
+    if (drop.storage !== 'r2' || !drop.objectKey) throw new Error('Drop is not R2-backed');
+    if (drop.creatorId !== creatorId) throw new Error('Not authorized for this drop');
+    return drop.objectKey;
+  }
+
   // ─── Get Drop Metadata (before claiming) ─────────────────
 
   /**

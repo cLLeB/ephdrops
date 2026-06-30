@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "Uploading… {{pct}}%",
       home: {
         title: "Ephemeral Drops",
         tagline: "Encrypted, self-destructing drops. The server never sees your content.",

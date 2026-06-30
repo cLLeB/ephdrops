@@ -62,6 +62,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
 
   // State
   const [isCreating, setIsCreating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null); // null until a large upload starts
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: content, 2: recipients, 3: settings
 
@@ -240,7 +241,8 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
       // 3. Encrypt (hint is encrypted with masterKey — server never sees plaintext)
       const encrypted = await encryptDrop(contentBuffer, usernames, hint.trim() || null);
 
-      // 4. Send to server — flatten contentMeta to match server API
+      // 4. Send to server — flatten contentMeta to match server API. Large
+      //    payloads upload via resumable multipart and report progress.
       const result = await createDropAPI({
         creatorId: getCreatorId(),
         encryptedBytes: encrypted.encryptedBytes,
@@ -256,7 +258,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
         viewOnce,
         encryptedHint: encrypted.encryptedHint || null,
         // hint is NOT sent — server stores only encrypted blob
-      });
+      }, (fraction) => setUploadProgress(Math.round(fraction * 100)));
 
       if (contentType === 'image' && stegoBlob && result.id) {
         try {
@@ -279,6 +281,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
       hapticError();
     } finally {
       setIsCreating(false);
+      setUploadProgress(null);
     }
   };
 
@@ -700,7 +703,9 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('drops.create.encrypting')}
+                  {uploadProgress !== null
+                    ? t('dropx.uploading', { pct: uploadProgress, defaultValue: 'Uploading… {{pct}}%' })
+                    : t('drops.create.encrypting')}
                 </>
               ) : (
                 <>

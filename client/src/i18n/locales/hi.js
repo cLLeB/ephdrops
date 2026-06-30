@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "अपलोड हो रहा है… {{pct}}%",
       home: {
         title: "अस्थायी Drops",
         tagline: "एन्क्रिप्टेड, स्वतः नष्ट होने वाले drops। सर्वर आपकी सामग्री कभी नहीं देखता।",

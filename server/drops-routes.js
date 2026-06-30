@@ -161,6 +161,66 @@ function createDropRoutes(dropManager, options = {}) {
     }
   });
 
+  // ─── Multipart upload for large R2 drops ────────────────────
+  // The client switches to these when the encrypted payload exceeds its
+  // multipart threshold. All four verify creatorId via getUploadTarget so only
+  // the drop's creator can drive its upload. (Three-segment paths, so they never
+  // collide with the static or /:dropId routes below.)
+
+  router.post('/:dropId/multipart/create', claimRateLimit, async (req, res) => {
+    try {
+      if (!r2.isR2Enabled()) return res.status(400).json({ error: 'R2 storage is not enabled' });
+      const objectKey = dropManager.getUploadTarget(req.params.dropId, req.body.creatorId);
+      const { uploadId } = await r2.createMultipartUpload(objectKey);
+      res.json({ uploadId });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  router.post('/:dropId/multipart/sign', claimRateLimit, async (req, res) => {
+    try {
+      if (!r2.isR2Enabled()) return res.status(400).json({ error: 'R2 storage is not enabled' });
+      const { creatorId, uploadId, partNumbers } = req.body;
+      if (!uploadId || !Array.isArray(partNumbers) || partNumbers.length === 0) {
+        return res.status(400).json({ error: 'uploadId and partNumbers[] are required' });
+      }
+      if (partNumbers.length > 10000) {
+        return res.status(400).json({ error: 'Too many parts requested' });
+      }
+      const objectKey = dropManager.getUploadTarget(req.params.dropId, creatorId);
+      const urls = await r2.presignUploadParts(objectKey, uploadId, partNumbers);
+      res.json({ urls });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  router.post('/:dropId/multipart/complete', claimRateLimit, async (req, res) => {
+    try {
+      if (!r2.isR2Enabled()) return res.status(400).json({ error: 'R2 storage is not enabled' });
+      const { creatorId, uploadId, parts } = req.body;
+      if (!uploadId || !Array.isArray(parts) || parts.length === 0) {
+        return res.status(400).json({ error: 'uploadId and parts[] are required' });
+      }
+      const objectKey = dropManager.getUploadTarget(req.params.dropId, creatorId);
+      await r2.completeMultipartUpload(objectKey, uploadId, parts);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  router.post('/:dropId/multipart/abort', claimRateLimit, async (req, res) => {
+    try {
+      const objectKey = dropManager.getUploadTarget(req.params.dropId, req.body.creatorId);
+      await r2.abortMultipartUpload(objectKey, req.body.uploadId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // ─── POST /api/drops/resolve-verbal — Resolve verbal code ──
   // NOTE: Static routes MUST come before parameterized /:dropId routes
 

@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "جارٍ الرفع… {{pct}}%",
       home: {
         title: "إسقاطات مؤقتة",
         tagline: "إسقاطات مشفّرة ذاتية التدمير. الخادم لا يرى محتواك أبدًا.",

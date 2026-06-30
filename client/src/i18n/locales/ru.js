@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "Загрузка… {{pct}}%",
       home: {
         title: "Эфемерные дропы",
         tagline: "Зашифрованные самоуничтожающиеся дропы. Сервер никогда не видит ваш контент.",

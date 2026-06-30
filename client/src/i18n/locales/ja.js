@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "アップロード中… {{pct}}%",
       home: {
         title: "一時的なドロップ",
         tagline: "暗号化された自己消滅型ドロップ。サーバーがあなたのコンテンツを見ることはありません。",

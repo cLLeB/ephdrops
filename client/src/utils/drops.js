@@ -26,6 +26,7 @@
 import { secureFetch } from './secure-fetch.js';
 import { API_BASE } from './resolve-url.js';
 import { encryptLargeContent, decryptLargeContent } from '../crypto/large-file-crypto.js';
+import { uploadMultipart, MULTIPART_THRESHOLD } from './multipart-upload.js';
 
 // Marker stored in the drop's `iv` metadata field. The chunked payload format
 // is fully self-describing (it carries its own per-chunk nonces), so this field
@@ -457,11 +458,11 @@ export async function getDropConfig() {
  *   is the raw ciphertext Uint8Array from encryptDrop.
  * @returns {Promise<Object>} { dropId, verbalCode, expiresAt, ephPacket }
  */
-export async function createDropAPI(dropData) {
+export async function createDropAPI(dropData, onProgress) {
   const config = await getDropConfig();
 
   if (config.storage === 'r2') {
-    return createDropViaR2(dropData);
+    return createDropViaR2(dropData, onProgress);
   }
 
   // In-memory path: the ciphertext rides inside the JSON body, so base64-encode
@@ -494,7 +495,7 @@ export async function createDropAPI(dropData) {
  * @param {Object} dropData - Includes the raw `encryptedBytes` Uint8Array plus metadata
  * @returns {Promise<Object>} The server's create response
  */
-async function createDropViaR2(dropData) {
+async function createDropViaR2(dropData, onProgress) {
   const { encryptedBytes, ...metadata } = dropData;
 
   // Phase 1 — create the metadata record and obtain the presigned PUT URL.
@@ -512,22 +513,33 @@ async function createDropViaR2(dropData) {
   if (!response.ok) {
     throw new Error(data.error || 'Failed to create drop');
   }
-  if (!data.uploadUrl) {
-    throw new Error('Server did not provide an upload URL for this drop.');
-  }
 
-  // Phase 2 — upload ciphertext directly to R2. Plain fetch (not secureFetch):
-  // this is a cross-origin request to Cloudflare and must not carry our headers.
-  // No Content-Type is set so the request matches the unsigned presigned URL.
-  const uploadResponse = await fetch(data.uploadUrl, {
-    method: 'PUT',
-    body: encryptedBytes,
-  });
-
-  if (!uploadResponse.ok) {
-    throw new Error(
-      `Failed to upload encrypted file (status ${uploadResponse.status}). Please try again.`
-    );
+  // Phase 2 — upload the ciphertext directly to R2.
+  // Large payloads use a resumable multipart upload with progress; smaller ones
+  // use a single presigned PUT. Both are cross-origin to Cloudflare and must not
+  // carry our app headers (so plain fetch, no Content-Type).
+  if (encryptedBytes.length > MULTIPART_THRESHOLD) {
+    await uploadMultipart({
+      dropId: data.dropId,
+      creatorId: metadata.creatorId,
+      encryptedBytes,
+      onProgress,
+    });
+  } else {
+    if (!data.uploadUrl) {
+      throw new Error('Server did not provide an upload URL for this drop.');
+    }
+    onProgress?.(0);
+    const uploadResponse = await fetch(data.uploadUrl, {
+      method: 'PUT',
+      body: encryptedBytes,
+    });
+    if (!uploadResponse.ok) {
+      throw new Error(
+        `Failed to upload encrypted file (status ${uploadResponse.status}). Please try again.`
+      );
+    }
+    onProgress?.(1);
   }
 
   return data;

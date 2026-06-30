@@ -1,6 +1,7 @@
 export default {
   translation: {
     dropx: {
+      uploading: "上传中… {{pct}}%",
       home: {
         title: "临时投递",
         tagline: "加密的自毁投递。服务器永远看不到您的内容。",
