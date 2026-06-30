@@ -7,6 +7,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { hapticSuccess, hapticError } from '../utils/platform';
 import { encryptDrop, createDropAPI, fileToArrayBuffer, getDropConfig } from '../utils/drops';
+import { createDropStreaming, STREAM_THRESHOLD } from '../utils/streaming-create';
 import { getCreatorId } from '../utils/creator';
 import StegoModal from './StegoModal';
 
@@ -213,52 +214,63 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
     setError('');
 
     try {
-      // 1. Prepare content as ArrayBuffer
-      let contentBuffer;
-      let contentMeta = {};
+      // Recipients, hint, progress callback.
+      const usernames = recipients.map(r => r.trim()).filter(Boolean);
+      const hintVal = hint.trim() || null;
+      const progressCb = (fraction) => setUploadProgress(Math.round(fraction * 100));
 
-      if (contentType === 'text') {
-        const encoder = new TextEncoder();
-        contentBuffer = encoder.encode(textContent).buffer;
-        contentMeta = { type: 'text', size: contentBuffer.byteLength };
-      } else {
-        // If user configured stego, use the pre-embedded blob; otherwise the original file
+      // Helper for the buffered path: encrypt an in-memory buffer and POST.
+      const createBuffered = async (contentBuffer, meta) => {
+        const encrypted = await encryptDrop(contentBuffer, usernames, hintVal);
+        return createDropAPI({
+          creatorId: getCreatorId(),
+          encryptedBytes: encrypted.encryptedBytes,
+          iv: encrypted.iv,
+          salt: encrypted.salt,
+          wrappedKeys: encrypted.wrappedKeys,
+          recipientHashes: encrypted.recipientHashes,
+          contentType: meta.contentType,
+          fileName: meta.fileName || null,
+          mimeType: meta.mimeType || null,
+          fileSize: meta.fileSize || null,
+          ttl,
+          viewOnce,
+          encryptedHint: encrypted.encryptedHint || null,
+        }, progressCb);
+      };
+
+      let result;
+
+      if (contentType !== 'text') {
+        // Use the pre-embedded stego blob when present, else the original file.
         const fileToUse = (contentType === 'image' && stegoBlob)
           ? new File([stegoBlob], selectedFile.name.replace(/\.[^.]+$/, '.png'), { type: 'image/png' })
           : selectedFile;
-        contentBuffer = await fileToArrayBuffer(fileToUse);
-        contentMeta = {
-          type: contentType,
+        const meta = {
+          contentType,
           fileName: fileToUse.name,
           mimeType: fileToUse.type,
-          size: fileToUse.size,
+          fileSize: fileToUse.size,
         };
+
+        if (fileToUse.size > STREAM_THRESHOLD) {
+          // Streaming: encrypt + upload in parts — the whole file is never in
+          // memory, so phones can send far larger files.
+          result = await createDropStreaming({
+            source: fileToUse,
+            usernames,
+            hint: hintVal,
+            metadata: { ...meta, ttl, viewOnce },
+            creatorId: getCreatorId(),
+            onProgress: progressCb,
+          });
+        } else {
+          result = await createBuffered(await fileToArrayBuffer(fileToUse), meta);
+        }
+      } else {
+        const contentBuffer = new TextEncoder().encode(textContent).buffer;
+        result = await createBuffered(contentBuffer, { contentType: 'text' });
       }
-
-      // 2. Get valid recipient usernames
-      const usernames = recipients.map(r => r.trim()).filter(Boolean);
-
-      // 3. Encrypt (hint is encrypted with masterKey — server never sees plaintext)
-      const encrypted = await encryptDrop(contentBuffer, usernames, hint.trim() || null);
-
-      // 4. Send to server — flatten contentMeta to match server API. Large
-      //    payloads upload via resumable multipart and report progress.
-      const result = await createDropAPI({
-        creatorId: getCreatorId(),
-        encryptedBytes: encrypted.encryptedBytes,
-        iv: encrypted.iv,
-        salt: encrypted.salt,
-        wrappedKeys: encrypted.wrappedKeys,
-        recipientHashes: encrypted.recipientHashes,
-        contentType: contentMeta.type,
-        fileName: contentMeta.fileName || null,
-        mimeType: contentMeta.mimeType || null,
-        fileSize: contentMeta.size || null,
-        ttl,
-        viewOnce,
-        encryptedHint: encrypted.encryptedHint || null,
-        // hint is NOT sent — server stores only encrypted blob
-      }, (fraction) => setUploadProgress(Math.round(fraction * 100)));
 
       if (contentType === 'image' && stegoBlob && result.id) {
         try {

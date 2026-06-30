@@ -105,3 +105,68 @@ export async function uploadMultipart({ dropId, creatorId, encryptedBytes, onPro
     throw err;
   }
 }
+
+/**
+ * Streaming multipart upload: consumes an async iterable of ciphertext pieces
+ * and flushes them as fixed PART_SIZE parts, so peak memory stays ~one part
+ * regardless of total size. Used by the streaming create path where the
+ * ciphertext is produced on the fly from File slices.
+ *
+ * @param {Object} args
+ * @param {string} args.dropId
+ * @param {string} args.creatorId
+ * @param {number} args.total - exact framed ciphertext size (for progress + part count)
+ * @param {AsyncIterable<Uint8Array>} args.source - ciphertext pieces in order
+ * @param {(fraction: number) => void} [args.onProgress]
+ * @returns {Promise<void>}
+ */
+export async function uploadStreamMultipart({ dropId, creatorId, total, source, onProgress }) {
+  const partCount = Math.max(1, Math.ceil(total / PART_SIZE));
+  const partNumbers = Array.from({ length: partCount }, (_, i) => i + 1);
+
+  const { uploadId } = await apiPost(`/api/drops/${dropId}/multipart/create`, { creatorId });
+
+  try {
+    const { urls } = await apiPost(`/api/drops/${dropId}/multipart/sign`, {
+      creatorId,
+      uploadId,
+      partNumbers,
+    });
+    const urlByPart = new Map(urls.map((u) => [u.partNumber, u.url]));
+
+    const parts = [];
+    let uploaded = 0;
+    let buffer = new Uint8Array(PART_SIZE);
+    let filled = 0;
+    let partNumber = 0;
+
+    const flush = async (size) => {
+      partNumber += 1;
+      const etag = await putPart(urlByPart.get(partNumber), buffer.subarray(0, size));
+      parts.push({ partNumber, etag });
+      uploaded += size;
+      onProgress?.(uploaded / total);
+    };
+
+    for await (const piece of source) {
+      let offset = 0;
+      while (offset < piece.length) {
+        const take = Math.min(PART_SIZE - filled, piece.length - offset);
+        buffer.set(piece.subarray(offset, offset + take), filled);
+        filled += take;
+        offset += take;
+        if (filled === PART_SIZE) {
+          await flush(PART_SIZE);
+          filled = 0;
+          buffer = new Uint8Array(PART_SIZE);
+        }
+      }
+    }
+    if (filled > 0) await flush(filled);
+
+    await apiPost(`/api/drops/${dropId}/multipart/complete`, { creatorId, uploadId, parts });
+  } catch (err) {
+    apiPost(`/api/drops/${dropId}/multipart/abort`, { creatorId, uploadId }).catch(() => {});
+    throw err;
+  }
+}

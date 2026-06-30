@@ -108,6 +108,62 @@ export async function encryptLargeContent(masterKey, content, chunkSize = DEFAUL
 }
 
 /**
+ * Compute the exact framed ciphertext size for a given plaintext length without
+ * encrypting anything. Lets the streaming path declare byteSize to the server
+ * up front (for size validation) before a byte is read.
+ *
+ * @param {number} plaintextSize
+ * @param {number} [chunkSize=DEFAULT_CHUNK_SIZE]
+ * @returns {number}
+ */
+export function framedSize(plaintextSize, chunkSize = DEFAULT_CHUNK_SIZE) {
+  const numChunks = plaintextSize === 0 ? 1 : Math.ceil(plaintextSize / chunkSize);
+  return HEADER_BYTES + plaintextSize + numChunks * TAG_BYTES;
+}
+
+/**
+ * Streaming encryptor: yields the framed ciphertext in pieces (header, then one
+ * piece per chunk) while reading the plaintext from a Blob/File in slices. Peak
+ * memory is ~one chunk, not the whole file — this is what lets a phone encrypt
+ * a multi-hundred-MB file without crashing.
+ *
+ * Byte-for-byte identical output to encryptLargeContent for the same key+nonce,
+ * so decryptLargeContent decrypts it unchanged. (The base nonce is random per
+ * call, exactly as in the buffered version.)
+ *
+ * @param {CryptoKey} masterKey
+ * @param {Blob} blob - File or Blob plaintext source (read via .slice)
+ * @param {number} [chunkSize=DEFAULT_CHUNK_SIZE]
+ * @returns {AsyncGenerator<Uint8Array>}
+ */
+export async function* encryptLargeStream(masterKey, blob, chunkSize = DEFAULT_CHUNK_SIZE) {
+  const total = blob.size;
+  const baseNonce = crypto.getRandomValues(new Uint8Array(8));
+
+  const header = new Uint8Array(HEADER_BYTES);
+  header.set(MAGIC, 0);
+  header.set(u32be(chunkSize), 4);
+  header.set(baseNonce, 8);
+  yield header;
+
+  const numChunks = total === 0 ? 1 : Math.ceil(total / chunkSize);
+  for (let index = 0; index < numChunks; index++) {
+    const start = index * chunkSize;
+    const end = Math.min(start + chunkSize, total);
+    // Read just this window from disk — the whole file is never in memory.
+    const plainChunk = new Uint8Array(await blob.slice(start, end).arrayBuffer());
+    const isFinal = index === numChunks - 1;
+
+    const ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: makeNonce(baseNonce, index), additionalData: makeAad(index, isFinal) },
+      masterKey,
+      plainChunk
+    );
+    yield new Uint8Array(ct);
+  }
+}
+
+/**
  * Decrypt a chunked AEAD blob produced by encryptLargeContent.
  * Throws if the blob is malformed, truncated, reordered, or tampered with.
  *

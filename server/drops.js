@@ -27,9 +27,12 @@ const MAX_RECIPIENTS_PER_DROP = 20;
 const MAX_PAYLOAD_SIZE = 25 * 1024 * 1024; // 25MB
 // R2-backed storage never touches server RAM — the browser uploads the
 // ciphertext straight to the bucket — so the cap is just a sanity ceiling.
-// The practical limit is the browser's memory while encrypting (a few hundred
-// MB to ~1GB depending on device).
-const MAX_PAYLOAD_SIZE_R2 = 1024 * 1024 * 1024; // 1GB
+// With streaming create + multipart upload the sender's memory is no longer the
+// limit (it stays ~constant regardless of size), so the cap can be generous.
+// The real ceiling is now the receiver opening it (desktop ~1–2GB; phones less).
+// Override with MAX_PAYLOAD_SIZE_R2_MB if needed.
+const MAX_PAYLOAD_SIZE_R2 =
+  (parseInt(process.env.MAX_PAYLOAD_SIZE_R2_MB, 10) || 2048) * 1024 * 1024; // default 2GB
 const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour
 const MIN_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours

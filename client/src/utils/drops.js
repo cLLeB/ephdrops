@@ -268,48 +268,53 @@ export async function unwrapMasterKey(wrappedKeyBase64, wrappingKey) {
  *   the in-memory path or uploads it directly for the R2 path.
  */
 export async function encryptDrop(content, usernames, hint = null) {
+  // metadata (keys/salt/hint) + the full ciphertext buffer. Used by the
+  // buffered path; the streaming path uses encryptDropMetadata + encryptLargeStream.
+  const meta = await encryptDropMetadata(usernames, hint);
+  const encryptedBytes = await encryptLargeContent(meta.masterKey, content);
+  return {
+    encryptedBytes,
+    iv: meta.iv,
+    salt: meta.salt,
+    wrappedKeys: meta.wrappedKeys,
+    recipientHashes: meta.recipientHashes,
+    encryptedHint: meta.encryptedHint,
+  };
+}
+
+/**
+ * Produce everything for a drop EXCEPT the encrypted content: a fresh master
+ * key, salt, per-recipient wrapped keys + hashes, and the encrypted hint. The
+ * streaming create path calls this first, then encrypts the file in slices with
+ * the returned masterKey — so the plaintext is never fully in memory.
+ *
+ * @param {string[]} usernames
+ * @param {string|null} hint
+ * @returns {Promise<{ masterKey: CryptoKey, iv: string, salt: string,
+ *   wrappedKeys: Object, recipientHashes: string[], encryptedHint: Object|null }>}
+ */
+export async function encryptDropMetadata(usernames, hint = null) {
   assertSecureCrypto();
 
-  // 1. Generate random salt
   const salt = generateDropSalt();
-
-  // 2. Generate random master key
   const masterKey = await generateMasterKey();
 
-  // 3. Encrypt the content with the chunked AEAD format. The returned blob is
-  //    self-describing (carries its own per-chunk nonces) and works for any size
-  //    from a few bytes of text up to large files, with per-chunk integrity.
-  const encryptedBytes = await encryptLargeContent(masterKey, content);
-
-  // 4. Encrypt hint if provided — server never sees plaintext hint (M4).
-  //    The hint is tiny, so base64-encoding it for JSON transport is safe.
   let encryptedHint = null;
   if (hint && typeof hint === 'string' && hint.trim().length > 0) {
     const { ciphertextBytes: hintBytes, iv: hintIv } = await encryptContent(hint.trim(), masterKey);
     encryptedHint = { iv: hintIv, ciphertext: uint8ToBase64(hintBytes) };
   }
 
-  // 5. For each recipient: hash username + wrap master key
   const wrappedKeys = {};
   const recipientHashes = [];
-
   for (const username of usernames) {
     const hash = await hashUsername(username, salt);
     const wrappingKey = await deriveWrappingKey(username, salt);
-    const wrappedKey = await wrapMasterKey(masterKey, wrappingKey);
-
-    wrappedKeys[hash] = wrappedKey;
+    wrappedKeys[hash] = await wrapMasterKey(masterKey, wrappingKey);
     recipientHashes.push(hash);
   }
 
-  return {
-    encryptedBytes,
-    iv: PAYLOAD_FORMAT_MARKER,
-    salt,
-    wrappedKeys,
-    recipientHashes,
-    encryptedHint,
-  };
+  return { masterKey, iv: PAYLOAD_FORMAT_MARKER, salt, wrappedKeys, recipientHashes, encryptedHint };
 }
 
 /**
