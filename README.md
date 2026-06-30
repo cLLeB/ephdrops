@@ -134,13 +134,25 @@ R2_BUCKET=...              # your bucket name
 ```
 
 **2. Add a CORS policy to the bucket** so browsers may upload/download directly.
-In Cloudflare → R2 → your bucket → Settings → CORS Policy, paste (replace the
-origin with your deployed app URL; add `http://localhost:5173` for local dev):
+In Cloudflare → R2 → your bucket → Settings → CORS Policy, paste the policy
+below. It includes the web origin **and the native app origins** — the desktop
+(Tauri) and Android (Capacitor) apps upload straight to R2 from their own
+origins, so those must be allowed or create/claim fails at the transfer step
+with "Failed to fetch":
 
 ```json
 [
   {
-    "AllowedOrigins": ["https://your-app-url.example"],
+    "AllowedOrigins": [
+      "https://beternow-ephdrops.hf.space",
+      "http://tauri.localhost",
+      "https://tauri.localhost",
+      "tauri://localhost",
+      "https://localhost",
+      "http://localhost",
+      "capacitor://localhost",
+      "http://localhost:5173"
+    ],
     "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": ["ETag"],
@@ -149,8 +161,10 @@ origin with your deployed app URL; add `http://localhost:5173` for local dev):
 ]
 ```
 
-Without this CORS rule, the browser blocks the direct transfer and create/claim
-will fail at the upload/download step.
+Native-origin notes: Tauri uses `http://tauri.localhost` on Windows and
+`tauri://localhost` on macOS/Linux; Capacitor Android uses `https://localhost`.
+`http://localhost:5173` covers local web dev. Without these the WebView blocks
+the direct R2 transfer even though the API call itself succeeds.
 
 How it flows:
 
