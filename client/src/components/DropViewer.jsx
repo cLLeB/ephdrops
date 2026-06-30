@@ -4,7 +4,7 @@ import {
   X, Package, Clock, Eye, EyeOff, AlertTriangle,
   FileDown, Type, Image, Mic, FileUp, Shield, Loader2, Lock
 } from 'lucide-react';
-import { decryptDrop, decryptDropFromBytes, arrayBufferToText, arrayBufferToDataUrl, arrayBufferToObjectUrl, hashUsername, completeDropAPI } from '../utils/drops';
+import { decryptDrop, decryptDropFromStream, arrayBufferToText, arrayBufferToDataUrl, arrayBufferToObjectUrl, hashUsername, completeDropAPI } from '../utils/drops';
 import { formatTimeRemaining } from '../utils/eph-file';
 import { downloadDataUrlOnDevice, downloadObjectUrlOnDevice } from '../utils/downloadHelper';
 import StegoModal from './StegoModal';
@@ -63,9 +63,10 @@ const DropViewer = ({ onClose, claimData }) => {
           if (!ctResponse.ok) {
             throw new Error(`Failed to download encrypted file (status ${ctResponse.status})`);
           }
-          const ciphertextBytes = await ctResponse.arrayBuffer();
-          if (cancelled) return;
-          plainBuffer = await decryptDropFromBytes(ciphertextBytes, iv, salt, wrappedKey, username);
+          // Stream the download straight into the decryptor so the full
+          // ciphertext is never buffered — roughly halves receive memory.
+          const ctLen = Number(ctResponse.headers.get('Content-Length')) || 0;
+          plainBuffer = await decryptDropFromStream(ctResponse.body, iv, salt, wrappedKey, username, ctLen);
         } else {
           plainBuffer = await decryptDrop(encryptedPayload, iv, salt, wrappedKey, username);
         }

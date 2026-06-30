@@ -225,4 +225,123 @@ export async function decryptLargeContent(masterKey, framed) {
   return out.buffer;
 }
 
+/**
+ * Streaming decryptor: reads the framed ciphertext from a ReadableStream (e.g.
+ * a fetch response body), decrypting one chunk at a time so the full ciphertext
+ * is never held in memory. Roughly halves receive-side peak memory vs.
+ * downloading the whole blob then decrypting.
+ *
+ * When `ciphertextLength` is known (Content-Length), the plaintext output is
+ * pre-allocated so there is no concat-doubling at the end.
+ *
+ * @param {CryptoKey} masterKey
+ * @param {ReadableStream<Uint8Array>} readable
+ * @param {number} [ciphertextLength] - total framed size, if known
+ * @returns {Promise<ArrayBuffer>} the recovered plaintext
+ */
+export async function decryptLargeStream(masterKey, readable, ciphertextLength = 0) {
+  const reader = readable.getReader();
+  let queue = [];        // Uint8Array pieces not yet consumed
+  let queued = 0;        // total bytes in queue
+  let streamDone = false;
+
+  async function pull() {
+    if (streamDone) return false;
+    const { value, done } = await reader.read();
+    if (done) { streamDone = true; return false; }
+    if (value && value.length) { queue.push(value); queued += value.length; }
+    return true;
+  }
+  async function ensure(n) {
+    while (queued < n && !streamDone) { await pull(); }
+    return queued >= n;
+  }
+  function consume(n) {
+    const out = new Uint8Array(n);
+    let off = 0;
+    while (off < n) {
+      const head = queue[0];
+      const take = Math.min(head.length, n - off);
+      out.set(head.subarray(0, take), off);
+      off += take;
+      if (take === head.length) queue.shift();
+      else queue[0] = head.subarray(take);
+      queued -= take;
+    }
+    return out;
+  }
+
+  // Header
+  if (!(await ensure(HEADER_BYTES))) {
+    throw new Error('Ciphertext too short — file is corrupted or incomplete');
+  }
+  const header = consume(HEADER_BYTES);
+  for (let i = 0; i < MAGIC.length; i++) {
+    if (header[i] !== MAGIC[i]) throw new Error('Unrecognized ciphertext format');
+  }
+  const chunkSize = ((header[4] << 24) | (header[5] << 16) | (header[6] << 8) | header[7]) >>> 0;
+  if (chunkSize === 0) throw new Error('Invalid ciphertext header');
+  const baseNonce = header.subarray(8, 16);
+  const fullCipher = chunkSize + TAG_BYTES;
+
+  // Pre-allocate output when the total size is known.
+  let out = null;
+  let outChunks = null;
+  let writeOffset = 0;
+  if (ciphertextLength > HEADER_BYTES) {
+    const bodyLen = ciphertextLength - HEADER_BYTES;
+    const numChunks = Math.ceil(bodyLen / fullCipher);
+    out = new Uint8Array(bodyLen - numChunks * TAG_BYTES);
+  } else {
+    outChunks = [];
+  }
+
+  let index = 0;
+  while (true) {
+    await ensure(fullCipher);
+    if (queued === 0) break; // clean end
+
+    let take;
+    let isFinal;
+    if (queued < fullCipher) {
+      // Stream ended with a short remainder → this is the final (partial) chunk.
+      take = queued;
+      isFinal = true;
+    } else {
+      // We have a full chunk's worth; peek for one more byte to know if more follow.
+      const more = await ensure(fullCipher + 1);
+      take = fullCipher;
+      isFinal = !more; // exactly fullCipher and nothing after → final
+    }
+    if (take < TAG_BYTES) throw new Error('Corrupted ciphertext — truncated chunk');
+
+    const cipherChunk = consume(take);
+    let pt;
+    try {
+      pt = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: makeNonce(baseNonce, index), additionalData: makeAad(index, isFinal) },
+        masterKey,
+        cipherChunk
+      );
+    } catch {
+      throw new Error('Decryption failed — the file is corrupted or the key is incorrect');
+    }
+
+    const ptBytes = new Uint8Array(pt);
+    if (out) { out.set(ptBytes, writeOffset); writeOffset += ptBytes.length; }
+    else outChunks.push(ptBytes);
+
+    index += 1;
+    if (isFinal) break;
+  }
+
+  if (out) return out.buffer;
+  // Fallback assembly when length was unknown.
+  const totalLen = outChunks.reduce((n, c) => n + c.length, 0);
+  const assembled = new Uint8Array(totalLen);
+  let o = 0;
+  for (const c of outChunks) { assembled.set(c, o); o += c.length; }
+  return assembled.buffer;
+}
+
 export const __test__ = { DEFAULT_CHUNK_SIZE, HEADER_BYTES, TAG_BYTES };

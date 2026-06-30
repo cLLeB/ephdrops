@@ -25,7 +25,7 @@
 
 import { secureFetch } from './secure-fetch.js';
 import { API_BASE } from './resolve-url.js';
-import { encryptLargeContent, decryptLargeContent } from '../crypto/large-file-crypto.js';
+import { encryptLargeContent, decryptLargeContent, decryptLargeStream } from '../crypto/large-file-crypto.js';
 import { uploadMultipart, MULTIPART_THRESHOLD } from './multipart-upload.js';
 
 // Marker stored in the drop's `iv` metadata field. The chunked payload format
@@ -371,6 +371,26 @@ export async function decryptDropFromBytes(ciphertextBytes, iv, salt, wrappedKey
   const masterKey = await unwrapMasterKey(wrappedKey, wrappingKey);
   // `iv` is a vestigial marker — the chunked blob carries its own nonces.
   return decryptLargeContent(masterKey, ciphertextBytes);
+}
+
+/**
+ * Like decryptDropFromBytes, but consumes a ReadableStream (a fetch response
+ * body) and decrypts on the fly — the full ciphertext is never held in memory,
+ * roughly halving receive-side peak memory for large drops.
+ *
+ * @param {ReadableStream<Uint8Array>} stream - Ciphertext stream from R2
+ * @param {string} iv - vestigial marker
+ * @param {string} salt
+ * @param {string} wrappedKey
+ * @param {string} username
+ * @param {number} [ciphertextLength] - total size from Content-Length, if known
+ * @returns {Promise<ArrayBuffer>} Decrypted content
+ */
+export async function decryptDropFromStream(stream, iv, salt, wrappedKey, username, ciphertextLength = 0) {
+  assertSecureCrypto();
+  const wrappingKey = await deriveWrappingKey(username, salt);
+  const masterKey = await unwrapMasterKey(wrappedKey, wrappingKey);
+  return decryptLargeStream(masterKey, stream, ciphertextLength);
 }
 
 // ─── File/Content Helpers ───────────────────────────────────
