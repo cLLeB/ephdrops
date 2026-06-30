@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "Drops efímeros",
+        tagline: "Drops cifrados que se autodestruyen. El servidor nunca ve tu contenido.",
+        createDrop: "Crear un drop",
+        claimDrop: "Reclamar un drop",
+        myDrops: "Mis drops",
+        badge: { e2ee: "Cifrado de extremo a extremo", ttl: "Autoexpiración", viewOnce: "Opción de ver una vez" },
+      },
       err: {
         fileTooLarge: "Archivo demasiado grande. El tamaño máximo es {{size}}MB",
         textTooLong: "Texto demasiado largo. Máximo {{max}} caracteres",

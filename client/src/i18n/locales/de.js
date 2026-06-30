@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "Ephemere Drops",
+        tagline: "Verschlüsselte, selbstzerstörende Drops. Der Server sieht deine Inhalte nie.",
+        createDrop: "Einen Drop erstellen",
+        claimDrop: "Einen Drop abrufen",
+        myDrops: "Meine Drops",
+        badge: { e2ee: "Ende-zu-Ende verschlüsselt", ttl: "Läuft automatisch ab", viewOnce: "Einmal-Ansicht-Option" },
+      },
       err: {
         fileTooLarge: "Datei zu groß. Maximale Größe ist {{size}} MB",
         textTooLong: "Text zu lang. Maximal {{max}} Zeichen",

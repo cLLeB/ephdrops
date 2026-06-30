@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "临时投递",
+        tagline: "加密的自毁投递。服务器永远看不到您的内容。",
+        createDrop: "创建投递",
+        claimDrop: "领取投递",
+        myDrops: "我的投递",
+        badge: { e2ee: "端到端加密", ttl: "自动过期", viewOnce: "阅后即焚选项" },
+      },
       err: {
         fileTooLarge: "文件太大。最大大小为 {{size}}MB",
         textTooLong: "文本太长。最多 {{max}} 个字符",

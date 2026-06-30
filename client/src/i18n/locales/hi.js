@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "अस्थायी Drops",
+        tagline: "एन्क्रिप्टेड, स्वतः नष्ट होने वाले drops। सर्वर आपकी सामग्री कभी नहीं देखता।",
+        createDrop: "एक Drop बनाएं",
+        claimDrop: "एक Drop प्राप्त करें",
+        myDrops: "मेरे Drops",
+        badge: { e2ee: "एंड-टू-एंड एन्क्रिप्टेड", ttl: "स्वतः समाप्ति", viewOnce: "एक बार देखने का विकल्प" },
+      },
       err: {
         fileTooLarge: "फ़ाइल बहुत बड़ी है। अधिकतम आकार {{size}}MB है",
         textTooLong: "टेक्स्ट बहुत लंबा है। अधिकतम {{max}} अक्षर",

@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "إسقاطات مؤقتة",
+        tagline: "إسقاطات مشفّرة ذاتية التدمير. الخادم لا يرى محتواك أبدًا.",
+        createDrop: "إنشاء Drop",
+        claimDrop: "المطالبة بـ Drop",
+        myDrops: "إسقاطاتي",
+        badge: { e2ee: "مشفّر من طرف إلى طرف", ttl: "انتهاء تلقائي", viewOnce: "خيار العرض مرة واحدة" },
+      },
       err: {
         fileTooLarge: "الملف كبير جدًا. الحد الأقصى للحجم هو {{size}} ميجابايت",
         textTooLong: "النص طويل جدًا. الحد الأقصى {{max}} حرف",

@@ -56,10 +56,10 @@ const DropsHome = () => {
             <Package className="w-9 h-9 text-purple-500" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('drops.title', 'Ephemeral Drops')}
+            {t('dropx.home.title', 'Ephemeral Drops')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('drops.tagline', 'Encrypted, self-destructing drops. The server never sees your content.')}
+            {t('dropx.home.tagline', 'Encrypted, self-destructing drops. The server never sees your content.')}
           </p>
         </div>
 
@@ -70,7 +70,7 @@ const DropsHome = () => {
             className="w-full flex items-center gap-3 px-5 py-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl transition-colors shadow-sm"
           >
             <Plus className="w-5 h-5" />
-            {t('drops.createDrop', 'Create a Drop')}
+            {t('dropx.home.createDrop', 'Create a Drop')}
           </button>
 
           <button
@@ -78,7 +78,7 @@ const DropsHome = () => {
             className="w-full flex items-center gap-3 px-5 py-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <KeyRound className="w-5 h-5 text-purple-500" />
-            {t('drops.claimDrop', 'Claim a Drop')}
+            {t('dropx.home.claimDrop', 'Claim a Drop')}
           </button>
 
           <button
@@ -86,7 +86,7 @@ const DropsHome = () => {
             className="w-full flex items-center gap-3 px-5 py-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <FolderClock className="w-5 h-5 text-purple-500" />
-            {t('drops.myDrops', 'My Drops')}
+            {t('dropx.home.myDrops', 'My Drops')}
           </button>
         </div>
 
@@ -94,15 +94,15 @@ const DropsHome = () => {
         <div className="grid grid-cols-3 gap-3 pt-2">
           <div className="text-center space-y-1.5">
             <Shield className="w-5 h-5 text-purple-500 mx-auto" />
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('drops.badge.e2ee', 'End-to-end encrypted')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('dropx.home.badge.e2ee', 'End-to-end encrypted')}</p>
           </div>
           <div className="text-center space-y-1.5">
             <Clock className="w-5 h-5 text-purple-500 mx-auto" />
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('drops.badge.ttl', 'Auto-expiring')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('dropx.home.badge.ttl', 'Auto-expiring')}</p>
           </div>
           <div className="text-center space-y-1.5">
             <EyeOff className="w-5 h-5 text-purple-500 mx-auto" />
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('drops.badge.viewOnce', 'View-once option')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('dropx.home.badge.viewOnce', 'View-once option')}</p>
           </div>
         </div>
       </div>

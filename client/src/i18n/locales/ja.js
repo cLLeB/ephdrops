@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "一時的なドロップ",
+        tagline: "暗号化された自己消滅型ドロップ。サーバーがあなたのコンテンツを見ることはありません。",
+        createDrop: "ドロップを作成",
+        claimDrop: "ドロップを受け取る",
+        myDrops: "マイドロップ",
+        badge: { e2ee: "エンドツーエンド暗号化", ttl: "自動有効期限切れ", viewOnce: "一度だけ表示オプション" },
+      },
       err: {
         fileTooLarge: "ファイルが大きすぎます。最大サイズは {{size}}MB です",
         textTooLong: "テキストが長すぎます。最大 {{max}} 文字",

@@ -194,7 +194,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
               <div className="flex items-center gap-3 px-4 py-3 border-t border-gray-100 dark:border-gray-700">
                 <Shield className="w-4 h-4 text-purple-500 shrink-0" />
                 <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                  {t('drops.tagline', 'Encrypted, self-destructing drops. The server never sees your content.')}
+                  {t('dropx.home.tagline', 'Encrypted, self-destructing drops. The server never sees your content.')}
                 </p>
               </div>
             </div>

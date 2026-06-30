@@ -1,6 +1,14 @@
 export default {
   translation: {
     dropx: {
+      home: {
+        title: "Ephemeral Drops",
+        tagline: "Encrypted, self-destructing drops. The server never sees your content.",
+        createDrop: "Create a Drop",
+        claimDrop: "Claim a Drop",
+        myDrops: "My Drops",
+        badge: { e2ee: "End-to-end encrypted", ttl: "Auto-expiring", viewOnce: "View-once option" },
+      },
       err: {
         fileTooLarge: "File too large. Maximum size is {{size}}MB",
         textTooLong: "Text too long. Maximum {{max}} characters",

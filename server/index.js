@@ -76,6 +76,32 @@ app.get('/health', (req, res) => {
   res.status(200).type('text/plain').send('OK');
 });
 
+// ─── Android App Links verification ─────────────────────────
+// Lets the Android app open https://<this-host>/drop/* links directly instead
+// of the browser. Must be served as JSON at this exact path. Declared before
+// the static/SPA handlers because express.static ignores dotfile paths and the
+// SPA fallback would otherwise return index.html here.
+//
+// The fingerprint below is the app's upload/signing key. NOTE: once the app is
+// published with Google Play App Signing, Play re-signs with its own key — add
+// that key's SHA-256 (Play Console → App integrity → App signing) to the array.
+const ASSETLINKS = [
+  {
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: {
+      namespace: 'android_app',
+      package_name: 'space.hf.beternow.ephdrops',
+      sha256_cert_fingerprints: [
+        'E1:DE:29:60:38:2F:82:99:11:55:85:BB:2C:BB:6D:A8:C2:7B:BD:AC:E4:8E:00:2F:91:F6:94:FF:F0:D5:B9:12',
+      ],
+    },
+  },
+];
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.json(ASSETLINKS);
+});
+
 // ─── Static client + SPA fallback ───────────────────────────
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientDist));
