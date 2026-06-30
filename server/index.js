@@ -106,6 +106,15 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientDist));
 
+// Privacy policy at a clean /privacy URL (the file ships in the client build at
+// dist/privacy/index.html). Declared before the SPA fallback so it isn't
+// swallowed and rewritten to the app's index.html.
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(clientDist, 'privacy', 'index.html'), (err) => {
+    if (err) res.status(404).send('Privacy policy not found.');
+  });
+});
+
 // Send index.html for any non-API route so client-side routes
 // (/drop/:id, /my-drops) survive a hard refresh.
 app.get(/^\/(?!api\/).*/, (req, res) => {
