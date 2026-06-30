@@ -1,0 +1,72 @@
+name: Android (Capacitor)
+
+# Builds a signed APK + AAB for the Play Store. Trigger by pushing a v* tag or
+# running manually. Requires these repository secrets:
+#   ANDROID_KEYSTORE_BASE64   - base64 of the release keystore
+#   ANDROID_KEYSTORE_PASSWORD - keystore password
+#   ANDROID_KEY_ALIAS         - key alias
+#   ANDROID_KEY_PASSWORD      - key password
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install client deps
+        run: npm install --prefix client
+
+      - name: Build web bundle (remote API baked in)
+        run: npm --prefix client run build:native
+
+      - name: Capacitor sync
+        run: npm --prefix client run cap:sync
+
+      - name: Reconstruct signing material from secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p ephemeral-key
+          echo "$KEYSTORE_BASE64" | base64 -d > ephemeral-key/ephemeral.keystore
+          cat > ephemeral-key/key.properties <<EOF
+          storeFile=ephemeral.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build signed AAB + APK
+        run: |
+          cd client/android
+          chmod +x ./gradlew
+          ./gradlew bundleRelease assembleRelease --no-daemon
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: |
+            client/android/app/build/outputs/apk/release/*.apk
+            client/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

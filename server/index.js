@@ -21,6 +21,7 @@ const express = require('express');
 const { logger } = require('./utils');
 const { DropManager } = require('./drops');
 const { createDropRoutes } = require('./drops-routes');
+const { corsMiddleware } = require('./cors');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -36,6 +37,10 @@ if (!process.env.EPH_SECRET && !process.env.CAP_SECRET) {
 
 // Trust the first proxy hop so req.ip is the real client IP behind a reverse proxy.
 app.set('trust proxy', 1);
+
+// Cross-origin access for the native apps (web client is same-origin). Mounted
+// before the API routes so it also answers CORS preflight (OPTIONS) requests.
+app.use('/api', corsMiddleware);
 
 // ─── Drop Manager + API routes ──────────────────────────────
 const dropManager = new DropManager();

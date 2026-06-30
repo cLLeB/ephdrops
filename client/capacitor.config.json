@@ -1,0 +1,14 @@
+{
+  "appId": "space.hf.beternow.ephdrops",
+  "appName": "Ephemeral Drops",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#030712"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}

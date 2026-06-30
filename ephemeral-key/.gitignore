@@ -1,0 +1,5 @@
+# Signing material MUST NEVER be committed. Ignore everything in this folder
+# except the docs and this ignore file itself.
+*
+!.gitignore
+!README.md

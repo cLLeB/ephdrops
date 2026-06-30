@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Package, Plus, KeyRound, FolderClock, Shield, Clock, EyeOff } from 'lucide-react';
+import { Package, Plus, KeyRound, FolderClock, Shield, Clock, EyeOff, Settings } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import CreateDropModal from './CreateDropModal';
 import DropCreatedModal from './DropCreatedModal';
 import ClaimDropModal from './ClaimDropModal';
 import DropViewer from './DropViewer';
+import SettingsModal from './SettingsModal';
 
 /**
  * Standalone landing page for Ephemeral Drops.
@@ -23,6 +24,7 @@ const DropsHome = () => {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showClaim, setShowClaim] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [createdDrop, setCreatedDrop] = useState(null);
   const [claimData, setClaimData] = useState(null);
 
@@ -37,7 +39,16 @@ const DropsHome = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center px-4 py-10">
+    <div className="relative min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center px-4 py-10">
+      {/* Settings */}
+      <button
+        onClick={() => setShowSettings(true)}
+        aria-label={t('settings.title', 'Settings')}
+        className="absolute top-4 right-4 p-2.5 rounded-full text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-800/70 backdrop-blur hover:bg-white dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+      >
+        <Settings className="w-5 h-5" />
+      </button>
+
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
@@ -124,6 +135,8 @@ const DropsHome = () => {
           claimData={claimData}
         />
       )}
+
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 };

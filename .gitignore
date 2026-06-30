@@ -29,3 +29,12 @@ Thumbs.db
 image.png
 image copy.png
 image*.png
+
+# Signing material — safety net so a keystore can never be committed anywhere
+*.keystore
+*.jks
+**/key.properties
+
+# Native build artifacts
+src-tauri/target/
+client/android/local.properties

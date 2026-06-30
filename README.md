@@ -29,6 +29,20 @@ content or plaintext usernames.
 > `fetch()` — exactly as it does in the source project when those layers are
 > not configured.
 
+## Native apps
+
+Besides the web app, Ephemeral Drops ships as native apps for **Windows, macOS,
+Linux** (Tauri 2) and **Android** (Capacitor), all wrapping the same React
+client and talking to the hosted backend. See **[NATIVE.md](NATIVE.md)** for
+build, signing, and release instructions.
+
+```bash
+npm run desktop:dev     # run the desktop app (hot reload)
+npm run desktop:build   # build desktop installers
+npm run android:sync    # build web + sync into the Android project
+npm run android:open    # open Android Studio
+```
+
 ## How it works
 
 1. **Create** — pick text/image/audio/file, add recipient usernames, a TTL, and

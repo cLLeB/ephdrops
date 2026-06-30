@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ephemeral Drops",
+  "version": "1.0.0",
+  "identifier": "space.hf.beternow.ephdrops",
+  "build": {
+    "frontendDist": "../client/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm --prefix client run dev",
+    "beforeBuildCommand": "npm --prefix client run build:native"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Ephemeral Drops",
+        "label": "main",
+        "width": 1080,
+        "height": 820,
+        "minWidth": 420,
+        "minHeight": 640,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Encrypted, self-destructing drops",
+    "longDescription": "Create encrypted, self-destructing drops. The server never sees your content. End-to-end encrypted, view-once, self-destructing file and message drops.",
+    "publisher": "Ephemeral Drops",
+    "copyright": "Apache-2.0"
+  },
+  "plugins": {}
+}

@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import DropsHome from './components/DropsHome';
 import MyDrops from './components/MyDrops';
 import DropPage from './components/DropPage';
+import DeepLinkHandler from './components/DeepLinkHandler';
 
 /**
  * Standalone Ephemeral Drops app.
@@ -17,6 +18,7 @@ import DropPage from './components/DropPage';
 function App() {
   return (
     <Router>
+      <DeepLinkHandler />
       <Routes>
         <Route path="/" element={<DropsHome />} />
         <Route path="/my-drops" element={<MyDrops />} />

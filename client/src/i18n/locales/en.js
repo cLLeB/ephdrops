@@ -663,6 +663,8 @@ export default {
     },
     settings: {
       title: 'Settings',
+      preferences: 'Preferences',
+      haptics: 'Haptic feedback',
       tabs: { general: 'General', chat: 'Chat', sound: 'Sound' },
       sound: {
         master: { title: 'Master', label: 'Sound', desc: 'Enable all audio output' },

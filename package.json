@@ -9,6 +9,16 @@
     "dev:server": "npm --prefix server run start",
     "dev:client": "npm --prefix client run dev",
     "build": "npm --prefix client run build",
-    "start": "npm --prefix server run start"
+    "start": "npm --prefix server run start",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "desktop:icons": "tauri icon client/public/icons/app-1080.png",
+    "android:add": "npm --prefix client run cap:add:android",
+    "android:sync": "npm --prefix client run build:native && npm --prefix client run cap:sync",
+    "android:open": "npm --prefix client run cap:open"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0"
   }
 }

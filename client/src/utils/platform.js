@@ -6,28 +6,41 @@
 
 // ==================== HAPTIC FEEDBACK ====================
 
+const HAPTICS_KEY = 'haptics';
+
+/** Whether haptic feedback is enabled (user preference, defaults to on). */
+export function areHapticsEnabled() {
+    return localStorage.getItem(HAPTICS_KEY) !== 'off';
+}
+
+/** Persist the haptics preference. */
+export function setHapticsEnabled(enabled) {
+    localStorage.setItem(HAPTICS_KEY, enabled ? 'on' : 'off');
+}
+
 /**
  * Trigger haptic feedback using the Web Vibration API.
- * Works on Android (both browser + Capacitor). Silently no-ops on desktop/iOS.
+ * Works on Android (both browser + Capacitor). Silently no-ops on desktop/iOS
+ * or when the user has disabled haptics in Settings.
  */
 export function hapticLight() {
-    if (navigator.vibrate) navigator.vibrate(10);
+    if (areHapticsEnabled() && navigator.vibrate) navigator.vibrate(10);
 }
 
 export function hapticMedium() {
-    if (navigator.vibrate) navigator.vibrate(25);
+    if (areHapticsEnabled() && navigator.vibrate) navigator.vibrate(25);
 }
 
 export function hapticHeavy() {
-    if (navigator.vibrate) navigator.vibrate(50);
+    if (areHapticsEnabled() && navigator.vibrate) navigator.vibrate(50);
 }
 
 export function hapticSuccess() {
-    if (navigator.vibrate) navigator.vibrate([15, 50, 15]);
+    if (areHapticsEnabled() && navigator.vibrate) navigator.vibrate([15, 50, 15]);
 }
 
 export function hapticError() {
-    if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
+    if (areHapticsEnabled() && navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
 }
 
 // ==================== SCREEN WAKE LOCK ====================

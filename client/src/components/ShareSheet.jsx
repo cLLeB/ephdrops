@@ -1,21 +1,8 @@
 import React, { useState } from 'react';
 import { X, Mail, Link as LinkIcon, Check, Copy } from 'lucide-react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { hapticSuccess, isTauri } from '../utils/platform';
-
-/**
- * Open a URL safely across all environments:
- *  - Tauri desktop: use the native shell opener (window.electronAPI.openUrlExternal)
- *    because window.open() is silently swallowed by Tauri's WebView.
- *  - Everything else: fall back to window.open().
- */
-function openUrl(url) {
-  if (window.electronAPI?.openUrlExternal) {
-    window.electronAPI.openUrlExternal(url);
-  } else {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-}
+import { hapticSuccess } from '../utils/platform';
+import { openExternal } from '../utils/share';
 
 // Simple icons for social platforms (Lucide doesn't have brand icons like WhatsApp/Telegram natively)
 // We'll use SVGs or text for them.
@@ -48,18 +35,17 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
         }, 1000);
     };
 
-    // On Tauri desktop, use native URI schemes so the installed desktop app opens
-    // directly via OS protocol handlers. On web/Electron, use the standard share URLs.
+    // Use https web links everywhere (wa.me / t.me) — they reliably open the
+    // installed app or the web client on every platform. openExternal() routes
+    // through Tauri's Rust opener so the links actually open in the desktop app
+    // (window.open is swallowed by Tauri's WebView).
     const shareOptions = [
         {
             name: 'WhatsApp',
             icon: <WhatsAppIcon />,
             color: 'bg-green-500 hover:bg-green-600',
-            action: () => {
-                const waUrl = window.electronAPI?.isTauri
-                    ? `whatsapp://send?text=${encodedText}%20${encodedUrl}`
-                    : `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
-                openUrl(waUrl);
+            action: async () => {
+                await openExternal(`https://wa.me/?text=${encodedText}%20${encodedUrl}`);
                 onClose();
             }
         },
@@ -67,11 +53,8 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
             name: 'Telegram',
             icon: <TelegramIcon />,
             color: 'bg-blue-500 hover:bg-blue-600',
-            action: () => {
-                const tgUrl = window.electronAPI?.isTauri
-                    ? `tg://msg_url?url=${encodedUrl}&text=${encodedText}`
-                    : `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
-                openUrl(tgUrl);
+            action: async () => {
+                await openExternal(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`);
                 onClose();
             }
         },
@@ -79,8 +62,8 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
             name: 'Email',
             icon: <Mail className="w-6 h-6" />,
             color: 'bg-gray-500 hover:bg-gray-600',
-            action: () => {
-                openUrl(`mailto:?subject=${encodeURIComponent(title)}&body=${encodedText}%0A%0A${encodedUrl}`);
+            action: async () => {
+                await openExternal(`mailto:?subject=${encodeURIComponent(title)}&body=${encodedText}%0A%0A${encodedUrl}`);
                 onClose();
             }
         }
