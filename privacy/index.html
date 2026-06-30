@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+  <title>Privacy Policy — Ephemeral Drops</title>
+  <meta name="description" content="Privacy Policy for Ephemeral Drops — encrypted, self-destructing drops." />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #8b5cf6;
+      --border: #e5e7eb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #030712;
+        --card: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #a78bfa;
+        --border: #1f2937;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex: none;
+    }
+
+    h1 { font-size: 1.6rem; margin: 0; }
+
+    .updated { color: var(--muted); font-size: 0.85rem; margin: 4px 0 32px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+      margin: 28px 0 8px;
+      color: var(--text);
+    }
+
+    h2:first-of-type { margin-top: 0; }
+
+    p, li { color: var(--text); font-size: 0.96rem; }
+    .muted { color: var(--muted); }
+
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+
+    footer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+      </div>
+      <h1>Privacy Policy</h1>
+    </header>
+    <p class="updated">Ephemeral Drops · Last updated 30 June 2026</p>
+
+    <div class="card">
+      <span class="pill">End-to-end encrypted · No accounts · No tracking</span>
+
+      <p>
+        Ephemeral Drops lets you create encrypted, self-destructing "drops" — text, images, audio,
+        or files — that are gated to specific recipients and disappear after viewing or expiry. This
+        policy explains exactly what the service can and cannot see. It applies to the website and to
+        the desktop and Android apps.
+      </p>
+
+      <h2>The short version</h2>
+      <p>
+        Your content is encrypted on your device before it ever leaves it. The server only ever stores
+        ciphertext (scrambled data) and never sees your message text, files, or the real usernames of
+        recipients. There are no accounts, no advertising, and no analytics or tracking.
+      </p>
+
+      <h2>What we cannot see</h2>
+      <ul>
+        <li>The contents of your drops — they are encrypted with AES-256-GCM on your device.</li>
+        <li>The decryption keys — the master key is wrapped for each recipient using a key derived
+          from their username and is never sent to us in usable form.</li>
+        <li>Recipient usernames in plaintext — only a SHA-256 hash of each username is stored.</li>
+      </ul>
+
+      <h2>What is stored</h2>
+      <p>To deliver a drop, the service stores the minimum necessary, all of which is deleted when the
+        drop expires or is fully claimed:</p>
+      <ul>
+        <li>The encrypted payload (ciphertext) of your drop.</li>
+        <li>Wrapped (encrypted) keys and SHA-256-hashed recipient usernames.</li>
+        <li>Minimal metadata: the drop's random ID, a verbal code, time-to-live, and an optional
+          plaintext hint you choose to add.</li>
+      </ul>
+
+      <h2>Data retention</h2>
+      <p>
+        Drops are ephemeral. Every drop is automatically and permanently deleted when its time-to-live
+        expires (from 5 minutes up to 24 hours), or immediately after all recipients have opened a
+        "view-once" drop. Encrypted blobs are removed from storage at the same time. We do not keep
+        backups of expired drops.
+      </p>
+
+      <h2>Network and security</h2>
+      <ul>
+        <li>All connections use HTTPS.</li>
+        <li>Your IP address may be processed transiently to apply rate limits and prevent abuse; it is
+          not stored alongside your drops or used to profile you.</li>
+        <li>We do not use cookies for tracking and we do not sell or share data with advertisers.</li>
+      </ul>
+
+      <h2>Service providers</h2>
+      <p>
+        The app runs on hosting infrastructure and uses Cloudflare R2 object storage to hold encrypted
+        payloads. These providers only ever receive ciphertext and process data on our behalf to
+        operate the service. They cannot read your drop contents.
+      </p>
+
+      <h2>Permissions on mobile</h2>
+      <p>
+        The Android app requests internet access to reach the service. It accesses files, the camera,
+        or the share sheet only when you actively choose to attach or save content. It does not collect
+        contacts, location, or device identifiers.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        Ephemeral Drops is not directed to children under 13, and we do not knowingly collect personal
+        information from them.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        We may update this policy from time to time. Material changes will be reflected by updating the
+        "Last updated" date above.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy or your data? Email
+        <a href="mailto:kyereboatengcaleb@gmail.com">kyereboatengcaleb@gmail.com</a>.
+      </p>
+    </div>
+
+    <footer>
+      © 2026 Ephemeral Drops · <a href="https://beternow-ephdrops.hf.space">beternow-ephdrops.hf.space</a>
+    </footer>
+  </div>
+</body>
+
+</html>
