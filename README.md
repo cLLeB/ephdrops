@@ -179,9 +179,11 @@ How it flows:
 
 ## Limits (inherited from the source feature)
 
-- Max payload: 25 MB encrypted in-memory, or up to **1 GB** with R2 enabled
-  (UI caps uploads to match the active storage mode; the practical ceiling for
-  large files is the browser's memory while encrypting)
+- Max payload: 25 MB encrypted in-memory, or up to **2 GB** with R2 enabled
+  (override via `MAX_PAYLOAD_SIZE_R2_MB`). Sending streams the file in 50 MB
+  parts (constant memory — even phones can send up to the cap); receiving streams
+  the download into the decryptor. The remaining limit is opening a finished
+  large file on a low-RAM device — use the desktop app for the biggest files.
 - Payloads use a chunked AES-256-GCM format (`client/src/crypto/large-file-crypto.js`):
   each block is independently authenticated, so a corrupted, truncated, or
   reordered download fails to decrypt rather than returning bad data
