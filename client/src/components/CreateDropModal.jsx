@@ -88,7 +88,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
     if (!file) return;
 
     if (file.size > maxFileSize) {
-      setError(`File too large. Maximum size is ${Math.round(maxFileSize / (1024 * 1024))}MB`);
+      setError(t('dropx.err.fileTooLarge', { size: Math.round(maxFileSize / (1024 * 1024)) }));
       return;
     }
 
@@ -151,16 +151,16 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
   const validateStep1 = useCallback(() => {
     if (contentType === 'text') {
       if (!textContent.trim()) {
-        setError('Please enter some text content');
+        setError(t('dropx.err.enterText'));
         return false;
       }
       if (textContent.length > MAX_TEXT_LENGTH) {
-        setError(`Text too long. Maximum ${MAX_TEXT_LENGTH} characters`);
+        setError(t('dropx.err.textTooLong', { max: MAX_TEXT_LENGTH }));
         return false;
       }
     } else {
       if (!selectedFile) {
-        setError(`Please select ${contentType === 'image' ? 'an image' : contentType === 'audio' ? 'an audio file' : 'a file'}`);
+        setError(contentType === 'image' ? t('dropx.err.selImage') : contentType === 'audio' ? t('dropx.err.selAudio') : t('dropx.err.selFile'));
         return false;
       }
     }
@@ -175,13 +175,13 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
     recipients.forEach((r, i) => {
       const trimmed = r.trim();
       if (!trimmed) {
-        errors[i] = 'Username required';
+        errors[i] = t('dropx.err.usernameRequired');
       } else if (trimmed.length < 2) {
-        errors[i] = 'Min 2 characters';
+        errors[i] = t('dropx.err.min2');
       } else if (trimmed.length > 30) {
-        errors[i] = 'Max 30 characters';
+        errors[i] = t('dropx.err.max30');
       } else if (validUsernames.includes(trimmed)) {
-        errors[i] = 'Duplicate username';
+        errors[i] = t('dropx.err.duplicate');
       } else {
         validUsernames.push(trimmed);
       }
@@ -190,12 +190,12 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
     setRecipientErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      setError('Please fix the recipient errors');
+      setError(t('dropx.err.fixRecipients'));
       return false;
     }
 
     if (validUsernames.length === 0) {
-      setError('At least one recipient is required');
+      setError(t('dropx.err.needRecipient'));
       return false;
     }
 
@@ -275,7 +275,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
       });
     } catch (err) {
       console.error('Failed to create drop:', err);
-      setError(err.message || 'Failed to create drop. Please try again.');
+      setError(err.message || t('dropx.err.createFailed'));
       hapticError();
     } finally {
       setIsCreating(false);
@@ -368,7 +368,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
                         }`}
                       >
                         <Icon className="w-5 h-5" />
-                        <span className="text-xs font-medium">{ct.label}</span>
+                        <span className="text-xs font-medium">{t(`dropx.type.${ct.id}`)}</span>
                       </button>
                     );
                   })}
@@ -638,15 +638,15 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
                 <p className="font-medium text-gray-700 dark:text-gray-300 text-sm">{t('drops.create.summary')}</p>
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('drops.create.type')}</span>
-                  <span className="font-medium capitalize">{contentType}</span>
+                  <span className="font-medium">{t(`dropx.type.${contentType}`)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('drops.create.recipients')}</span>
-                  <span className="font-medium">{recipients.filter(r => r.trim()).length} user(s)</span>
+                  <span className="font-medium">{t('dropx.users', { count: recipients.filter(r => r.trim()).length })}</span>
                 </div>
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('drops.create.expires')}</span>
-                  <span className="font-medium">{TTL_OPTIONS.find(o => o.value === ttl)?.label}</span>
+                  <span className="font-medium">{t(`dropx.ttl.${ttl}`)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('drops.create.viewOnce')}</span>
@@ -654,7 +654,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
                 </div>
                 {contentType !== 'text' && selectedFile && (
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                    <span>File</span>
+                    <span>{t('dropx.fileLabel')}</span>
                     <span className="font-medium truncate ml-4">{selectedFile.name}</span>
                   </div>
                 )}
@@ -705,7 +705,7 @@ const CreateDropModal = ({ onClose, onDropCreated }) => {
               ) : (
                 <>
                   <Package className="w-4 h-4" />
-                  Create Drop
+                  {t('dropx.createButton')}
                 </>
               )}
             </button>

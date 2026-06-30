@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Mail, Link as LinkIcon, Check, Copy } from 'lucide-react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { hapticSuccess } from '../utils/platform';
@@ -18,6 +19,7 @@ const TelegramIcon = () => (
 
 
 const ShareSheet = ({ isOpen, onClose, shareData }) => {
+    const { t } = useTranslation();
     const [isCopied, setIsCopied] = useState(false);
 
     if (!isOpen) return null;
@@ -74,7 +76,7 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
             <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl p-6 w-full max-w-sm animate-in slide-in-from-bottom duration-200">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Share via
+                        {t('dropx.shareVia', 'Share via')}
                     </h3>
                     <button
                         onClick={onClose}
@@ -104,7 +106,7 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
                                 {isCopied ? <Check className="w-6 h-6" /> : <Copy className="w-6 h-6" />}
                             </div>
                             <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                {isCopied ? 'Copied' : 'Copy'}
+                                {isCopied ? t('common.copied') : t('common.copy')}
                             </span>
                         </button>
                     </CopyToClipboard>
@@ -119,7 +121,7 @@ const ShareSheet = ({ isOpen, onClose, shareData }) => {
                                 <LinkIcon className="w-4 h-4" />
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">Invite Link</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{t('dropx.inviteLink', 'Invite Link')}</span>
                                 <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{url}</span>
                             </div>
                         </div>

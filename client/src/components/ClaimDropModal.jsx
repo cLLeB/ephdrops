@@ -63,7 +63,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
       setStep(2);
       hapticSuccess();
     } catch (err) {
-      setError(err.message || 'Drop not found or expired');
+      setError(err.message || t('dropx.err.notFoundExpired'));
       hapticError();
     } finally {
       setIsLoading(false);
@@ -78,7 +78,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
     if (inputMethod === 'id') {
       const trimmed = dropId.trim();
       if (!trimmed) {
-        setError('Please enter a Drop ID');
+        setError(t('dropx.err.enterDropId'));
         return;
       }
       await lookupDrop(trimmed);
@@ -86,13 +86,13 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
     } else if (inputMethod === 'verbal') {
       const trimmed = verbalCode.trim().toLowerCase();
       if (!trimmed) {
-        setError('Please enter a verbal code');
+        setError(t('dropx.err.enterVerbal'));
         return;
       }
 
       const words = trimmed.split(/\s+/).filter(w => w.length > 0);
       if (words.length !== 4) {
-        setError('Verbal code must be 4 words');
+        setError(t('dropx.err.verbal4Words'));
         return;
       }
 
@@ -101,14 +101,14 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
         const result = await resolveVerbalCodeAPI(trimmed);
         await lookupDrop(result.dropId);
       } catch (err) {
-        setError(err.message || 'Invalid or expired verbal code');
+        setError(err.message || t('dropx.err.invalidVerbal'));
         hapticError();
         setIsLoading(false);
       }
 
     } else if (inputMethod === 'eph') {
       if (!ephPacket) {
-        setError('Please select a valid .eph file');
+        setError(t('dropx.err.validEph'));
         return;
       }
 
@@ -117,7 +117,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
         const validated = await validateEphFile(ephPacket);
         await lookupDrop(validated.dropId);
       } catch (err) {
-        setError(err.message || 'Invalid or expired .eph file');
+        setError(err.message || t('dropx.err.invalidEph'));
         hapticError();
         setIsLoading(false);
       }
@@ -130,11 +130,11 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
     const trimmedUsername = username.trim().toLowerCase();
 
     if (!trimmedUsername) {
-      setError('Please enter your username');
+      setError(t('dropx.err.enterUsername'));
       return;
     }
     if (trimmedUsername.length < 2) {
-      setError('Username must be at least 2 characters');
+      setError(t('dropx.err.usernameMin'));
       return;
     }
 
@@ -175,7 +175,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
         ...result,
       });
     } catch (err) {
-      setError(err.message || 'Failed to claim drop. Check your username.');
+      setError(err.message || t('dropx.err.claimFailed'));
       hapticError();
     } finally {
       setIsClaiming(false);
@@ -192,7 +192,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
     if (!file) return;
 
     if (!file.name.endsWith(EPH_EXTENSION)) {
-      setError('Please select a valid .eph file');
+      setError(t('dropx.err.validEph'));
       return;
     }
 
@@ -202,7 +202,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
       const packet = await parseEphFile(file);
       setEphPacket(packet);
     } catch (err) {
-      setError(err.message || 'Failed to parse .eph file');
+      setError(err.message || t('dropx.err.parseEphFailed'));
       setEphFile(null);
     }
   }, []);
@@ -230,7 +230,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
 
     const file = files[0];
     if (!file.name.endsWith(EPH_EXTENSION)) {
-      setError('Please drop a valid .eph file');
+      setError(t('dropx.err.validEph'));
       return;
     }
 
@@ -239,7 +239,7 @@ const ClaimDropModal = ({ onClose, onDropClaimed, initialDropId, initialVerbalCo
       const packet = await parseEphFile(file);
       setEphPacket(packet);
     } catch (err) {
-      setError(err.message || 'Failed to parse .eph file');
+      setError(err.message || t('dropx.err.parseEphFailed'));
       setEphFile(null);
     }
   };

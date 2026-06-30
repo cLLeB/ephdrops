@@ -21,7 +21,7 @@ const DropPage = () => {
   useEffect(() => {
     if (!dropId) {
       setPhase('error');
-      setError('No drop ID provided');
+      setError(t('dropx.err.noDropId'));
       return;
     }
 
